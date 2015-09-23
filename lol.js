@@ -38,7 +38,7 @@ lol.data={vtx:[],tri:[],col:[]};
 lol.cam={x:0,y:0,z:-8};
 lol.co={x:0,y:0,z:0}; /* camera orientation vector */
 lol.light={x:0,y:0,z:-1024};
-lol.lo={x:-70,y:0,z:0}; /* light orientation vector */
+lol.lo={x:-30,y:-36,z:0}; /* light orientation vector */
 lol.norm={x:0.375,y:0.375,z:0.375};
 lol.vec={x:0,y:0,z:0};
 lol.m=4;
@@ -49,7 +49,7 @@ lol.tn=function(txt){return window.document.createTextNode(String(txt));};
 
 lol.version=
   {
-  maj:0,min:3,build:15,beta:true, /* u03b1=alpha,u03b2=beta */
+  maj:0,min:3,build:16,beta:true, /* u03b1=alpha,u03b2=beta */
   get:function()
     {
     var v=lol.version;
@@ -59,7 +59,7 @@ lol.version=
 
 lol.init=function()
   {
-  var i=0,j=0,scale={},s=1.5,w=0.1,q=2,x=15,y=15;
+  var scale={},s=1.5,w=0.1,q=2;
   lol.icon();
   lol.config=lol.localstorage.get();
   if(lol.config.version!==lol.version.get())
@@ -78,20 +78,9 @@ lol.init=function()
       };
     lol.localstorage.save();
     }
-  /*
-  scale={x:q*0.95,y:0,z:q*0.95};
-  i=0;
-  while(i<x)
-    {
-    j=0;
-    while(j<y)
-      {
-      lol.mesh.format(mesh.quad,{x:i*q*2-(x-1)*q,y:s+w,z:j*q*2-(y-1)*q},scale,{x:-90,y:0,z:0});
-      j+=1;
-      }
-    i+=1;
-    }
-  */
+  scale={x:s-w,y:0,z:s-w};
+  lol.mesh.format(mesh.quad,{x:0,y:s+w,z:0},scale,{x:-90,y:0,z:0});
+  lol.mesh.format(mesh.quad,{x:0,y:-s-w,z:0},scale,{x:90,y:0,z:0});
   scale={x:w,y:s-w,z:w};
   lol.mesh.format(mesh.tube,{x:-s,y: 0,z:-s},scale);
   lol.mesh.format(mesh.tube,{x: s,y: 0,z:-s},scale);
@@ -184,6 +173,9 @@ lol.resize=function()
   lol.cvs.width=lol.w*lol.pr.w;
   lol.cvs.height=lol.h*lol.pr.h;
   lol.ctx.scale(lol.pr.w,lol.pr.h);
+  el=lol.i(lol.id+'-scanline');
+  el.style.width=lol.cvs.width+'px';
+  el.style.height=lol.cvs.height+'px';
   lol.console.log('size',lol.w+'*'+lol.h);
   lol.anim.update();
   };
@@ -192,19 +184,15 @@ lol.scanline=
   {
   init:function()
     {
-    var i=0,j=0,x,y,a=0.25,el=lol.el('canvas'),ctx,grd;
-    el.id=lol.id+'-scanline';
-    el.width=Math.round(lol.w*lol.pr.w);
-    el.height=Math.round(lol.h*lol.pr.h);
-    el.style.position='absolute';
-    el.style.display=lol.config.scanline?'block':'none';
-    lol.i(lol.id).appendChild(el);
-    ctx=el.getContext('2d');
-    while(j<lol.h*lol.pr.h)
+    var i=0,j=0,x,y,a=0.25,cvs=lol.el('canvas'),ctx,el=lol.el('div');
+    cvs.width=4*lol.pr.w;
+    cvs.height=4*lol.pr.h;
+    ctx=cvs.getContext('2d');
+    while(j<cvs.height)
       {
       i=0;
       x=i;//(j/lol.pr.h)%2*2;
-      while(i<lol.w*lol.pr.w)
+      while(i<cvs.width)
         {
         y=j;//+(i/lol.pr.w)%2;
         ctx.fillStyle='rgba(248,0,0,'+a+')';
@@ -219,6 +207,11 @@ lol.scanline=
         }
       j+=lol.pr.h;
       }
+    el.id=lol.id+'-scanline';
+    el.style.position='absolute';
+    el.style.display=lol.config.scanline?'block':'none';
+    el.style.backgroundImage='url('+cvs.toDataURL()+')';
+    lol.i(lol.id).appendChild(el);
     },
   show:function()
     {
@@ -1578,7 +1571,7 @@ lol.icon=function()
   img.height=cvs.height*lol.pr.h;
   img.style.float='right';
   img.style.imageRendering='pixelated';
-	img.style.zIndex=1024;
+  img.style.zIndex=1024;
   window.document.body.appendChild(img);
   };
 
