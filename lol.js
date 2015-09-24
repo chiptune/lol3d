@@ -38,7 +38,7 @@ lol.data={vtx:[],tri:[],col:[]};
 lol.cam={x:0,y:0,z:-8};
 lol.co={x:0,y:0,z:0}; /* camera orientation vector */
 lol.light={x:0,y:0,z:-1024};
-lol.lo={x:-30,y:-36,z:0}; /* light orientation vector */
+lol.lo={x:-60,y:0,z:0}; /* light orientation vector */
 lol.norm={x:0.375,y:0.375,z:0.375};
 lol.vec={x:0,y:0,z:0};
 lol.m=4;
@@ -49,7 +49,7 @@ lol.tn=function(txt){return window.document.createTextNode(String(txt));};
 
 lol.version=
   {
-  maj:0,min:3,build:16,beta:true, /* u03b1=alpha,u03b2=beta */
+  maj:0,min:3,build:18,beta:true, /* u03b1=alpha,u03b2=beta */
   get:function()
     {
     var v=lol.version;
@@ -59,7 +59,7 @@ lol.version=
 
 lol.init=function()
   {
-  var scale={},s=1.5,w=0.1,q=2;
+  var scale={},s=1.5,w=0.1;
   lol.icon();
   lol.config=lol.localstorage.get();
   if(lol.config.version!==lol.version.get())
@@ -209,21 +209,19 @@ lol.scanline=
       }
     el.id=lol.id+'-scanline';
     el.style.position='absolute';
-    el.style.display=lol.config.scanline?'block':'none';
+    el.style.display=lol.flag.get('scanline')?'block':'none';
     el.style.backgroundImage='url('+cvs.toDataURL()+')';
     lol.i(lol.id).appendChild(el);
     },
   show:function()
     {
     lol.i(lol.id+'-scanline').style.display='block';
-    lol.config.scanline=true;
-    lol.localstorage.save();
+    lol.flag.set('scanline',true);
     },
   hide:function()
     {
     lol.i(lol.id+'-scanline').style.display='none';
-    lol.config.scanline=false;
-    lol.localstorage.save();
+    lol.flag.set('scanline',false);
     },
   swap:function()
     {
@@ -1234,7 +1232,7 @@ lol.key=
       {
       case 27:lol.console.swap();break; /* esc */
       case 32:break; /* space */
-      case 13:lol.scanline.swap();break; /* return */
+      case 13:lol.flag.swap('scanline');break;  /* return */
       case 37:lol.o.y=(lol.o.y-22.5)%360;lol.anim.update();break; /* left  */
       case 39:lol.o.y=(lol.o.y+22.5)%360;lol.anim.update();break; /* right */
       case 38:lol.o.x=(lol.o.x-22.5)%360;lol.anim.update();break; /* up    */
@@ -1299,7 +1297,15 @@ lol.mesh=
 
 lol.flag=
   {
-  list:{vertex:false,face:true,wireframe:false,normal:false,light:true},
+  list:
+    {
+    vertex:false,
+    face:true,
+    wireframe:false,
+    normal:false,
+    light:true,
+    scanline:false
+    },
   set:function(name,value)
     {
     if(!lol.util.isstring(name)){return false;}
@@ -1313,7 +1319,11 @@ lol.flag=
     {
     return (lol.flag.list[name]!=='undefined')?lol.flag.list[name]:false;
     },
-  swap:function(name){lol.flag.set(name,!lol.flag.list[name]);}
+  swap:function(name)
+    {
+    lol.flag.set(name,!lol.flag.list[name]);
+    if(lol.util.isfunction(lol[name].swap)){lol[name].swap();}
+    }
   };
 
 lol.util=
@@ -1321,6 +1331,7 @@ lol.util=
   isboolean:function(v){if(typeof v==='boolean'){return true;}return false;},
   isnumber:function(v){if(typeof v==='number'){return true;}return false;},
   isstring:function(v){if(typeof v==='string'){return true;}return false;},
+  isfunction:function(v){if(typeof v==='function'){return true;}return false;},
   isempty:function(obj)
     {
     if(window.Object.getOwnPropertyNames(obj).length===0){return true;}
