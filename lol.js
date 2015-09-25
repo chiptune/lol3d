@@ -1322,6 +1322,7 @@ lol.flag=
   swap:function(name)
     {
     lol.flag.set(name,!lol.flag.list[name]);
+    if(!lol.util.isobject(lol[name])){return false;}
     if(lol.util.isfunction(lol[name].swap)){lol[name].swap();}
     }
   };
@@ -1331,6 +1332,7 @@ lol.util=
   isboolean:function(v){if(typeof v==='boolean'){return true;}return false;},
   isnumber:function(v){if(typeof v==='number'){return true;}return false;},
   isstring:function(v){if(typeof v==='string'){return true;}return false;},
+  isobject:function(v){if(typeof v==='object'){return true;}return false;},
   isfunction:function(v){if(typeof v==='function'){return true;}return false;},
   isempty:function(obj)
     {
