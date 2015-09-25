@@ -28,17 +28,12 @@ var lol={id:id};
 
 lol.pr={w:3,h:3};     /* pixel ratio */
 lol.zr=192;           /* perspective */
-lol.r={x:0,y:0,z:0};  /* rotation vector */
-lol.o={x:0,y:0,z:0};  /* orientation vector (x=-21) */
 lol.timer=0;
 lol.rid=false;        /* frame request id */
 lol.cvs=false;        /* canvas */
 lol.ctx=false;        /* 2d context */
 lol.data={vtx:[],tri:[],col:[]};
-lol.cam={x:0,y:0,z:-8};
-lol.co={x:0,y:0,z:0}; /* camera orientation vector */
 lol.light={x:0,y:0,z:-1024};
-lol.lo={x:-60,y:0,z:0}; /* light orientation vector */
 lol.norm={x:0.375,y:0.375,z:0.375};
 lol.vec={x:0,y:0,z:0};
 lol.m=4;
@@ -49,7 +44,7 @@ lol.tn=function(txt){return window.document.createTextNode(String(txt));};
 
 lol.version=
   {
-  maj:0,min:3,build:18,beta:true, /* u03b1=alpha,u03b2=beta */
+  maj:0,min:3,build:19,beta:true, /* u03b1=alpha,u03b2=beta */
   get:function()
     {
     var v=lol.version;
@@ -74,10 +69,20 @@ lol.init=function()
       version:lol.version.get(),
       flag:lol.flag.list,
       anim:false,
-      console:true
+      console:true,
+      r:{x:0,y:0,z:0},    /* rotation vector */
+      o:{x:0,y:0,z:0},    /* orientation vector (x=-21) */
+      cam:{x:0,y:0,z:-8}, /* camera position vector */
+      co:{x:0,y:0,z:0},   /* camera orientation vector */
+      lo:{x:-60,y:0,z:0}  /* light orientation vector */
       };
     lol.localstorage.save();
     }
+  lol.r=lol.config.r;
+  lol.o=lol.config.o;
+  lol.cam=lol.config.cam;
+  lol.co=lol.config.co;
+  lol.lo=lol.config.lo;
   scale={x:s-w,y:0,z:s-w};
   lol.mesh.format(mesh.quad,{x:0,y:s+w,z:0},scale,{x:-90,y:0,z:0});
   lol.mesh.format(mesh.quad,{x:0,y:-s-w,z:0},scale,{x:90,y:0,z:0});
@@ -1152,7 +1157,6 @@ lol.mouse=
         {
         lol.o.y=lol.vec.y+y;
         lol.o.x=lol.vec.x+x;
-        //lol.lo.y=lol.vec.y+y;
         }
       if(lol.key.ctrl)
         {
@@ -1176,10 +1180,23 @@ lol.mouse=
     if(!lol.key.shift&&!lol.key.ctrl&&!lol.key.alt)
       {
       lol.vec=lol.util.clone(lol.cam);
+      lol.config.cam=lol.cam;
       }
-    if(lol.key.shift){lol.vec=lol.util.clone(lol.co);}
-    if(lol.key.ctrl){lol.vec=lol.util.clone(lol.o);}
-    if(lol.key.alt){lol.vec=lol.util.clone(lol.lo);}
+    if(lol.key.shift)
+      {
+      lol.vec=lol.util.clone(lol.o);
+      lol.config.o=lol.o;
+      }
+    if(lol.key.ctrl)
+      {
+      lol.vec=lol.util.clone(lol.co);
+      lol.config.co=lol.co;
+      }
+    if(lol.key.alt)
+      {
+      lol.vec=lol.util.clone(lol.lo);
+      lol.config.lo=lol.lo;
+      }
     lol.mouse.click=true;
     lol.mouse.log(e);
     },
@@ -1189,6 +1206,7 @@ lol.mouse=
     lol.vec=lol.util.clone(lol.vector.o);
     lol.mouse.click=false;
     lol.mouse.log(e);
+    lol.localstorage.save();
     },
   wheel:function(e)
     {
