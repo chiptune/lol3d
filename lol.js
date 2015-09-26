@@ -44,7 +44,7 @@ lol.tn=function(txt){return window.document.createTextNode(String(txt));};
 
 lol.version=
   {
-  maj:0,min:3,build:19,beta:true, /* u03b1=alpha,u03b2=beta */
+  maj:0,min:3,build:20,beta:true, /* u03b1=alpha,u03b2=beta */
   get:function()
     {
     var v=lol.version;
@@ -122,6 +122,7 @@ lol.init=function()
   lol.console.hr(0);
   lol.console.log('vertex n',lol.data.vtx.length);
   lol.console.log('face n',lol.data.tri.length/3);
+  lol.color.init();
   lol.console.hr(1);
   window.Object.keys(lol.flag.list).forEach(function(v){lol.flag.set(v);});
   lol.console.hr(2);
@@ -134,7 +135,6 @@ lol.init=function()
   window.addEventListener('mousemove',lol.mouse.move,false);
   var evt=lol.util.isffx()?'DOMMouseScroll':'mousewheel';
   window.addEventListener(evt,lol.mouse.wheel,false);
-  lol.color.init();
   lol.scanline.init();
   lol.resize();
   lol.timer=lol.util.time();
@@ -405,7 +405,19 @@ lol.color=
     el.style.cursor='default';
     el.style.display=lol.config.console?'block':'none';
     window.document.body.appendChild(el);
+    lol.color.update();
+    },
+  update:function()
+    {
+    var el=lol.i(lol.id+'-palette');
+    while(el.firstChild){el.removeChild(el.firstChild);}
     lol.color.list.forEach(function(v,i){lol.color.generate(v,i);});
+    lol.console.log('color',lol.color.n,function()
+      {
+      lol.color.n+=1;
+      lol.color.update();
+      lol.anim.update();
+      });
     },
   generate:function(c,p)
     {
@@ -1261,6 +1273,7 @@ lol.key=
       case 87:lol.flag.swap('wireframe');lol.anim.update();break; /* w */
       case 78:lol.flag.swap('normal');lol.anim.update();break;    /* n */
       case 76:lol.flag.swap('light');lol.anim.update();break;     /* l */
+      case 68:lol.flag.swap('dither');lol.anim.update();break;    /* d */
       }
     }
   };
@@ -1322,6 +1335,7 @@ lol.flag=
     wireframe:false,
     normal:false,
     light:true,
+    dither:true,
     scanline:false
     },
   set:function(name,value)
