@@ -44,7 +44,7 @@ lol.tn=function(txt){return window.document.createTextNode(String(txt));};
 
 lol.version=
   {
-  maj:0,min:3,build:20,beta:true, /* u03b1=alpha,u03b2=beta */
+  maj:0,min:3,build:21,beta:true, /* u03b1=alpha,u03b2=beta */
   get:function()
     {
     var v=lol.version;
@@ -70,6 +70,7 @@ lol.init=function()
       flag:lol.flag.list,
       anim:false,
       console:true,
+      color:7,
       r:{x:0,y:0,z:0},    /* rotation vector */
       o:{x:0,y:0,z:0},    /* orientation vector (x=-21) */
       cam:{x:0,y:0,z:-8}, /* camera position vector */
@@ -78,12 +79,13 @@ lol.init=function()
       };
     lol.localstorage.save();
     }
+  lol.color.n=lol.config.color;
   lol.r=lol.config.r;
   lol.o=lol.config.o;
   lol.cam=lol.config.cam;
   lol.co=lol.config.co;
   lol.lo=lol.config.lo;
-  scale={x:s-w,y:0,z:s-w};
+/*scale={x:s-w,y:0,z:s-w};
   lol.mesh.format(mesh.quad,{x:0,y:s+w,z:0},scale,{x:-90,y:0,z:0});
   lol.mesh.format(mesh.quad,{x:0,y:-s-w,z:0},scale,{x:90,y:0,z:0});
   scale={x:w,y:s-w,z:w};
@@ -109,9 +111,9 @@ lol.init=function()
   lol.mesh.format(mesh.corner,{x: s,y:-s,z: s},scale,{x:0,y:-90,z:0});
   lol.mesh.format(mesh.corner,{x:-s,y:-s,z: s},scale,{x:0,y:180,z:0});
   lol.mesh.format(mesh.corner,{x:-s,y: s,z: s},scale,{x:0,y:90,z:180});
-  lol.mesh.format(mesh.corner,{x: s,y: s,z: s},scale,{x:0,y:180,z:180});
-  scale={x:1.25,y:1.25,z:1.25};
-  lol.mesh.format(mesh.icosahedron,null,scale,{x:-30,y:0,z:0});
+  lol.mesh.format(mesh.corner,{x: s,y: s,z: s},scale,{x:0,y:180,z:180});*/
+  //scale={x:1.25,y:1.25,z:1.25};
+  lol.mesh.format(mesh.icosahedron,null,null,{x:-30,y:0,z:0});
   //var obj=lol.mesh.load('mesh/duck.json');
   //scale={x:0.001,y:0.001,z:0.001};
   //lol.mesh.format(obj,null,scale,{x:90,y:0,z:180});
@@ -371,7 +373,7 @@ lol.vector=
 
 lol.color=
   {
-  n:7,
+  n:0,
   w:14,
   h:14,
   pal:[],
@@ -405,17 +407,19 @@ lol.color=
     el.style.cursor='default';
     el.style.display=lol.config.console?'block':'none';
     window.document.body.appendChild(el);
-    lol.color.update();
+    lol.color.update(1);
     },
-  update:function()
+  update:function(n)
     {
     var el=lol.i(lol.id+'-palette');
     while(el.firstChild){el.removeChild(el.firstChild);}
     lol.color.list.forEach(function(v,i){lol.color.generate(v,i);});
+    lol.config.color=lol.color.n;
+    lol.localstorage.save();
     lol.console.log('color',lol.color.n,function()
       {
-      lol.color.n+=1;
-      lol.color.update();
+      lol.color.n+=n;
+      lol.color.update(1);
       lol.anim.update();
       });
     },
@@ -808,7 +812,7 @@ lol.fill=
 
 lol.render=function()
   {
-  var i,k,n,test=true,vec,mtx,ls,ld,a,b,c,max,
+  var i,k,n,test=true,vec,mtx,ls,ld,a,b,c,d,max,
   raw=[],dat=[],fct=[],norm=[],cull=[],lgt=[],col=lol.util.copy(lol.data.col);
   mtx=lol.matrix.rotation(lol.vector.neg(lol.lo));
   ls=lol.matrix.multiply(lol.light,mtx);
@@ -897,22 +901,23 @@ lol.render=function()
   if(lol.flag.get('face'))
     {
     i=0;
-    test=lol.flag.get('light');
     max=(lol.color.n-1)*3;
     while(i<n)
       {
       if(cull[i]<0)
         {
-        if(test)
+        if(lol.flag.get('light'))
           {
-          c=Math.round(lgt[i]*max);if(c<0){c=0;}
+          c=Math.round(lgt[i]*max); if(c<0){c=0;}
           }
         else
           {
           c=Math.round(lol.color.n/2)*3;
           }
         k=i*3;
-        lol.fill.triangle(dat[k],dat[k+1],dat[k+2],col[i],Math.round(c/3),c%3);
+        d=0;
+        if(lol.flag.get('dither')){d=c%3;}
+        lol.fill.triangle(dat[k],dat[k+1],dat[k+2],col[i],Math.round(c/3),d);
         }
       i+=1;
       }
