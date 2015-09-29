@@ -85,7 +85,7 @@ lol.init=function()
   lol.cam=lol.config.cam;
   lol.co=lol.config.co;
   lol.lo=lol.config.lo;
-/*scale={x:s-w,y:0,z:s-w};
+  scale={x:s-w,y:0,z:s-w};
   lol.mesh.format(mesh.quad,{x:0,y:s+w,z:0},scale,{x:-90,y:0,z:0});
   lol.mesh.format(mesh.quad,{x:0,y:-s-w,z:0},scale,{x:90,y:0,z:0});
   scale={x:w,y:s-w,z:w};
@@ -111,7 +111,7 @@ lol.init=function()
   lol.mesh.format(mesh.corner,{x: s,y:-s,z: s},scale,{x:0,y:-90,z:0});
   lol.mesh.format(mesh.corner,{x:-s,y:-s,z: s},scale,{x:0,y:180,z:0});
   lol.mesh.format(mesh.corner,{x:-s,y: s,z: s},scale,{x:0,y:90,z:180});
-  lol.mesh.format(mesh.corner,{x: s,y: s,z: s},scale,{x:0,y:180,z:180});*/
+  lol.mesh.format(mesh.corner,{x: s,y: s,z: s},scale,{x:0,y:180,z:180});
   //scale={x:1.25,y:1.25,z:1.25};
   lol.mesh.format(mesh.icosahedron,null,null,{x:-30,y:0,z:0});
   //var obj=lol.mesh.load('mesh/duck.json');
@@ -406,6 +406,8 @@ lol.color=
     el.style.textAlign='right';
     el.style.cursor='default';
     el.style.display=lol.config.console?'block':'none';
+    el.addEventListener('selectstart',function(){return false;},false);
+    el.addEventListener('dragstart',function(){return false;},false);
     window.document.body.appendChild(el);
     lol.color.update(1);
     },
@@ -1459,6 +1461,8 @@ lol.console=
     el.style.cursor='default';
     el.style.display=lol.config.console?'block':'none';
     el.style.zIndex=2;
+    el.addEventListener('selectstart',function(){return false;},false);
+    el.addEventListener('dragstart',function(){return false;},false);
     window.document.body.appendChild(el);
     },
   log:function(name,value,handler)
