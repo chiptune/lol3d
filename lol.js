@@ -26,17 +26,17 @@ mesh=mesh||{};
 
 var lol={id:id};
 
-lol.pr={w:3,h:3};     /* pixel ratio */
-lol.zr=192;           /* perspective */
+lol.pr={w:4,h:2}; /* pixel ratio */
+lol.zr=192;       /* perspective */
 lol.timer=0;
-lol.rid=false;        /* frame request id */
-lol.cvs=false;        /* canvas */
-lol.ctx=false;        /* 2d context */
+lol.rid=false;    /* frame request id */
+lol.cvs=false;    /* canvas */
+lol.ctx=false;    /* 2d context */
 lol.data={vtx:[],tri:[],col:[]};
 lol.light={x:0,y:0,z:-1024};
 lol.norm={x:0.375,y:0.375,z:0.375};
 lol.vec={x:0,y:0,z:0};
-lol.m=4;
+lol.m=4;          /* margin */
 
 lol.i=function(id){return window.document.getElementById(String(id));};
 lol.el=function(el){return window.document.createElement(String(el));};
@@ -44,7 +44,7 @@ lol.tn=function(txt){return window.document.createTextNode(String(txt));};
 
 lol.version=
   {
-  maj:0,min:3,build:21,beta:true, /* u03b1=alpha,u03b2=beta */
+  maj:0,min:3,build:23,beta:true, /* u03b1=alpha,u03b2=beta */
   get:function()
     {
     var v=lol.version;
@@ -56,6 +56,7 @@ lol.init=function()
   {
   var scale={},s=1.5,w=0.1;
   lol.icon();
+  lol.css();
   lol.config=lol.localstorage.get();
   if(lol.config.version!==lol.version.get())
     {
@@ -70,15 +71,16 @@ lol.init=function()
       flag:lol.flag.list,
       anim:false,
       console:true,
-      color:7,
+      color:6,
       r:{x:0,y:0,z:0},    /* rotation vector */
-      o:{x:0,y:0,z:0},    /* orientation vector (x=-21) */
-      cam:{x:0,y:0,z:-8}, /* camera position vector */
+      o:{x:0,y:0,z:0},    /* orientation vector */
+      cam:{x:0,y:0,z:-6}, /* camera position vector */
       co:{x:0,y:0,z:0},   /* camera orientation vector */
       lo:{x:-60,y:0,z:0}  /* light orientation vector */
       };
     lol.localstorage.save();
     }
+  lol.pr.r=lol.pr.h/lol.pr.w;
   lol.color.n=lol.config.color;
   lol.r=lol.config.r;
   lol.o=lol.config.o;
@@ -112,8 +114,8 @@ lol.init=function()
   lol.mesh.format(mesh.corner,{x:-s,y:-s,z: s},scale,{x:0,y:180,z:0});
   lol.mesh.format(mesh.corner,{x:-s,y: s,z: s},scale,{x:0,y:90,z:180});
   lol.mesh.format(mesh.corner,{x: s,y: s,z: s},scale,{x:0,y:180,z:180});
-  //scale={x:1.25,y:1.25,z:1.25};
-  lol.mesh.format(mesh.icosahedron,null,null,{x:-30,y:0,z:0});
+  scale={x:1.0,y:1.0,z:1.0};
+  lol.mesh.format(mesh.icosahedron,null,scale,{x:-30,y:0,z:0});
   //var obj=lol.mesh.load('mesh/duck.json');
   //scale={x:0.001,y:0.001,z:0.001};
   //lol.mesh.format(obj,null,scale,{x:90,y:0,z:180});
@@ -366,7 +368,7 @@ lol.vector=
     z=(vec.z-cam.z)/lol.zr;
     if(z>0){z=0;}
     return {
-      x:Math.round(lol.w/2+(vec.x-cam.x)/z),
+      x:Math.round(lol.w/2+(vec.x*lol.pr.r-cam.x)/z),
       y:Math.round(lol.h/2+(vec.y-cam.y)/z)};
     }
   };
@@ -655,7 +657,7 @@ lol.fill=
           y+=1;
           }
         break;
-      case 1:
+      case 1: case 3:
         while(y<=v2.y)
           {
           if(x1<x2){a=x1;b=x2;}else{a=x2;b=x1;}
@@ -666,7 +668,7 @@ lol.fill=
             i=y%2;
             if(i===0)
               {
-              lol.color.set(lol.color.pal[p][c+1]);
+              lol.color.set(lol.color.pal[p][c+((n===1)?1:-1)]);
               lol.ctx.beginPath();
               x=a;
               while(x<b){if((x+i)%2===0){lol.plot.pixel({x:x,y:y});}x+=1;}
@@ -746,7 +748,7 @@ lol.fill=
           y-=1;
           }
         break;
-      case 1:
+      case 1: case 3:
         while(y>v1.y)
           {
           x1-=xi1;
@@ -759,7 +761,7 @@ lol.fill=
             i=y%2;
             if(i===0)
               {
-              lol.color.set(lol.color.pal[p][c+1]);
+              lol.color.set(lol.color.pal[p][c+((n===1)?1:-1)]);
               lol.ctx.beginPath();
               x=a;
               while(x<b){if((x+i)%2===0){lol.plot.pixel({x:x,y:y});}x+=1;}
@@ -903,7 +905,7 @@ lol.render=function()
   if(lol.flag.get('face'))
     {
     i=0;
-    max=(lol.color.n-1)*3;
+    max=(lol.color.n-1)*4;
     while(i<n)
       {
       if(cull[i]<0)
@@ -914,12 +916,12 @@ lol.render=function()
           }
         else
           {
-          c=Math.round(lol.color.n/2)*3;
+          c=Math.round(lol.color.n/2)*4;
           }
         k=i*3;
         d=0;
-        if(lol.flag.get('dither')){d=c%3;}
-        lol.fill.triangle(dat[k],dat[k+1],dat[k+2],col[i],Math.round(c/3),d);
+        if(lol.flag.get('dither')){d=c%4;}
+        lol.fill.triangle(dat[k],dat[k+1],dat[k+2],col[i],Math.round(c/4),d);
         }
       i+=1;
       }
@@ -984,7 +986,7 @@ lol.render=function()
     {
     mtx=lol.matrix.rotation(lol.lo);
     ls=lol.matrix.multiply(lol.light,mtx);
-    ls=lol.vector.mul(lol.vector.norm(ls),{x:3.5,y:3.5,z:3.5});
+    ls=lol.vector.mul(lol.vector.norm(ls),{x:3.25,y:3.25,z:3.25});
     a=lol.vector.norm(lol.vector.add(ls,ld));
     vec=lol.vector.sub(ls,lol.vector.mul(a,lol.norm));
     a=lol.vector.transform(lol.cam,ls);
@@ -1137,7 +1139,7 @@ lol.fps=
   del:function()
     {
     var el=lol.fps.el.firstChild;
-    if(typeof el==='object'){lol.fps.el.removeChild(el);}
+    if(lol.util.isobject(el)){lol.fps.el.removeChild(el);}
     },
   reset:function()
     {
@@ -1471,28 +1473,27 @@ lol.console=
     var el=lol.i(lol.id+'-console-'+name),n,log=name;
     if(el===null)
       {
-      if((typeof value==='boolean')&&(typeof handler!=='function'))
+      if(lol.util.isboolean(value)&&!lol.util.isfunction(handler))
         {
         handler=function(){lol.flag.swap(name);lol.anim.update();};
         }
-      el=lol.console.add(name,handler);
+      el=lol.console.add(name,value,handler);
       }
-    if(typeof value==='boolean')
+    if(lol.util.isboolean(value))
       {
       n=lol.el('a');
       n.innerHTML='<u>'+name.charAt(0)+'</u>'+name.slice(1);
-      log=n.outerHTML;
+      log=n.outerHTML+'? '+(value?'yes':'no');
       }
-    if(typeof value==='boolean'){log+='? '+(value?'yes':'no');}
-    if(typeof value==='string'){log+=(value!=='')?': '+value:'';}
-    if(typeof value==='number'){log+='='+value;}
+    if(lol.util.isstring(value)){log+=(value!=='')?': '+value:'';}
+    if(lol.util.isnumber(value)){log+='='+value;}
     el.innerHTML=log;
     },
-  add:function(name,handler)
+  add:function(name,value,handler)
     {
-    var el=lol.el('div'),fn,col=[];
+    var el=lol.el('div'),fn,col=[],btn;
     el.id=lol.id+'-console-'+name;
-    if(typeof handler==='function')
+    if(lol.util.isfunction(handler)&&(lol.util.isboolean(value)||value===null))
       {
       el.addEventListener('click',handler,false);
       col=lol.color.bgd.map(function(v){return v-16;});
@@ -1501,6 +1502,14 @@ lol.console=
       fn=function(){lol.i(el.id).style.backgroundColor='transparent';};
       el.addEventListener('mouseout',fn,false);
       el.style.cursor='pointer';
+      }
+    if(lol.util.isfunction(handler)&&lol.util.isnumber(value))
+      {
+      btn=lol.el('div');
+      btn.className='p';
+      btn.style.cursor='pointer';
+      btn.addEventListener('click',handler,'plus');
+      //el.appendChild(btn);
       }
     lol.i(lol.id+'-console').appendChild(el);
     return el;
@@ -1582,6 +1591,46 @@ lol.validate=function()
       }
     };
   xhr.send();
+  };
+
+lol.css=function()
+  {
+  var style,rule,n,cvs=lol.el('canvas'),ctx,map=[ /* 16*8 */
+  '_XXXXXXXX__XXXXXXXX_',
+  'XXXXXXXXXXXXXXXXXXXX',
+  'XXXXXXXXXXXXXX__XXXX',
+  'XXXXXXXXXXXXXX__XXXX',
+  'XX______XXXX______XX',
+  'XX______XXXX______XX',
+  'XXXXXXXXXXXXXX__XXXX',
+  'XXXXXXXXXXXXXX__XXXX',
+  'XXXXXXXXXXXXXXXXXXXX',
+  '_XXXXXXXX__XXXXXXXX_'];
+  cvs.width=map[0].length;
+  cvs.height=map.length;
+  ctx=cvs.getContext('2d');
+  ctx.fillStyle=lol.color.format(lol.color.bgd.map(function(v){return v+64;}));
+  ctx.beginPath();
+  map.forEach(function(v,y)
+    {
+    v.split('').forEach(function(v,x){if(v==='X'){ctx.rect(x,y,1,1);}});
+    });
+  ctx.closePath();
+  ctx.fill();
+  style=window.document.styleSheets[0];
+  if(style.cssRules)
+    {
+    n=style.cssRules.length;
+    rule='float:right;margin-left:1px;';
+    rule+='width:'+(cvs.width/2)+'px;height:'+cvs.height+'px;';
+    rule+='background-image:url(\''+cvs.toDataURL()+'\')';
+    style.insertRule('.m {'+rule+'}',n);
+    rule='float:right;margin-left:1px;';
+    rule+='width:'+(cvs.width/2)+'px;height:'+cvs.height+'px;';
+    rule+='background-image:url(\''+cvs.toDataURL()+'\');';
+    rule+='background-position:-'+(cvs.width/2)+'px 0px';
+    style.insertRule('.p {'+rule+'}',n+1);
+    }
   };
 
 lol.icon=function()
