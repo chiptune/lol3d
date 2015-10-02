@@ -44,7 +44,7 @@ lol.tn=function(txt){return window.document.createTextNode(String(txt));};
 
 lol.version=
   {
-  maj:0,min:3,build:23,beta:true, /* u03b1=alpha,u03b2=beta */
+  maj:0,min:3,build:24,beta:true, /* u03b1=alpha,u03b2=beta */
   get:function()
     {
     var v=lol.version;
@@ -71,7 +71,7 @@ lol.init=function()
       flag:lol.flag.list,
       anim:false,
       console:true,
-      color:6,
+      color:7,
       r:{x:0,y:0,z:0},    /* rotation vector */
       o:{x:0,y:0,z:0},    /* orientation vector */
       cam:{x:0,y:0,z:-6}, /* camera position vector */
@@ -368,7 +368,7 @@ lol.vector=
     z=(vec.z-cam.z)/lol.zr;
     if(z>0){z=0;}
     return {
-      x:Math.round(lol.w/2+(vec.x*lol.pr.r-cam.x)/z),
+      x:Math.round(lol.w/2+(vec.x-cam.x)*lol.pr.r/z),
       y:Math.round(lol.h/2+(vec.y-cam.y)/z)};
     }
   };
@@ -413,19 +413,19 @@ lol.color=
     window.document.body.appendChild(el);
     lol.color.update(1);
     },
-  update:function(n)
+  update:function()
     {
     var el=lol.i(lol.id+'-palette');
     while(el.firstChild){el.removeChild(el.firstChild);}
     lol.color.list.forEach(function(v,i){lol.color.generate(v,i);});
     lol.config.color=lol.color.n;
     lol.localstorage.save();
-    lol.console.log('color',lol.color.n,function()
+    lol.console.log('color',lol.color.n,function(e)
       {
-      lol.color.n+=n;
-      lol.color.update(1);
+      lol.color.n+=e.target.param;
+      lol.color.update();
       lol.anim.update();
-      });
+      },1);
     },
   generate:function(c,p)
     {
@@ -1456,43 +1456,46 @@ lol.console=
     el=lol.el('div');
     el.id=lol.id+'-console';
     el.style.position='absolute';
+    el.style.width=lol.console.w+'px';
     el.style.font='normal 11px/11px monospace';
     el.style.color=lol.color.format(col);
     el.style.left=(lol.color.w+lol.m*2)+'px';
     el.style.top=lol.m+'px';
     el.style.cursor='default';
     el.style.display=lol.config.console?'block':'none';
+    el.style.overflow='hidden';
     el.style.zIndex=2;
     el.addEventListener('selectstart',function(){return false;},false);
     el.addEventListener('dragstart',function(){return false;},false);
     window.document.body.appendChild(el);
     },
-  log:function(name,value,handler)
+  log:function(name,value,handler,param)
     {
     lol.console.list[name]=value;
-    var el=lol.i(lol.id+'-console-'+name),n,log=name;
-    if(el===null)
-      {
-      if(lol.util.isboolean(value)&&!lol.util.isfunction(handler))
-        {
-        handler=function(){lol.flag.swap(name);lol.anim.update();};
-        }
-      el=lol.console.add(name,value,handler);
-      }
+    var el=lol.i(lol.id+'-console-'+name),v,log=name;
+    if(el===null){lol.console.add(name,value,handler,param);}
+    v=lol.i(lol.id+'-console-'+name+'-value');
     if(lol.util.isboolean(value))
       {
-      n=lol.el('a');
-      n.innerHTML='<u>'+name.charAt(0)+'</u>'+name.slice(1);
-      log=n.outerHTML+'? '+(value?'yes':'no');
+      v.innerHTML='<u>'+name.charAt(0)+'</u>'+name.slice(1);
+      log=v.outerHTML+'? '+(value?'yes':'no');
       }
     if(lol.util.isstring(value)){log+=(value!=='')?': '+value:'';}
     if(lol.util.isnumber(value)){log+='='+value;}
-    el.innerHTML=log;
+    v.innerHTML=log;
     },
-  add:function(name,value,handler)
+  add:function(name,value,handler,param)
     {
-    var el=lol.el('div'),fn,col=[],btn;
+    var el=lol.el('div'),v,fn,btn,col=[];
     el.id=lol.id+'-console-'+name;
+    el.style.width=lol.console.w+'px';
+    v=lol.el('a');
+    v.id=el.id+'-value';
+    el.appendChild(v);
+    if(lol.util.isboolean(value)&&!lol.util.isfunction(handler))
+      {
+      handler=function(){lol.flag.swap(name);lol.anim.update();};
+      }
     if(lol.util.isfunction(handler)&&(lol.util.isboolean(value)||value===null))
       {
       el.addEventListener('click',handler,false);
@@ -1508,11 +1511,17 @@ lol.console=
       btn=lol.el('div');
       btn.className='p';
       btn.style.cursor='pointer';
-      btn.addEventListener('click',handler,'plus');
-      //el.appendChild(btn);
+      btn.param=param;
+      btn.addEventListener('click',handler,false);
+      el.appendChild(btn);
+      btn=lol.el('div');
+      btn.className='m';
+      btn.style.cursor='pointer';
+      btn.param=-param;
+      btn.addEventListener('click',handler,false);
+      el.appendChild(btn);
       }
     lol.i(lol.id+'-console').appendChild(el);
-    return el;
     },
   hr:function(id)
     {
