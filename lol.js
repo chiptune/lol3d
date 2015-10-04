@@ -26,7 +26,6 @@ mesh=mesh||{};
 
 var lol={id:id};
 
-lol.pr={w:4,h:2}; /* pixel ratio */
 lol.zr=192;       /* perspective */
 lol.timer=0;
 lol.rid=false;    /* frame request id */
@@ -44,7 +43,7 @@ lol.tn=function(txt){return window.document.createTextNode(String(txt));};
 
 lol.version=
   {
-  maj:0,min:3,build:24,beta:true, /* u03b1=alpha,u03b2=beta */
+  maj:0,min:3,build:25,beta:true, /* u03b1=alpha,u03b2=beta */
   get:function()
     {
     var v=lol.version;
@@ -54,9 +53,7 @@ lol.version=
 
 lol.init=function()
   {
-  var scale={},s=1.5,w=0.1;
-  lol.icon();
-  lol.css();
+  var scale={},s=1.5,w=0.1,handler;
   lol.config=lol.localstorage.get();
   if(lol.config.version!==lol.version.get())
     {
@@ -72,6 +69,7 @@ lol.init=function()
       anim:false,
       console:true,
       color:7,
+      pr:{w:2,h:2},       /* pixel ratio */
       r:{x:0,y:0,z:0},    /* rotation vector */
       o:{x:0,y:0,z:0},    /* orientation vector */
       cam:{x:0,y:0,z:-6}, /* camera position vector */
@@ -80,6 +78,7 @@ lol.init=function()
       };
     lol.localstorage.save();
     }
+  lol.pr={w:lol.config.pr.w,h:lol.config.pr.h};
   lol.pr.r=lol.pr.h/lol.pr.w;
   lol.color.n=lol.config.color;
   lol.r=lol.config.r;
@@ -119,10 +118,34 @@ lol.init=function()
   //var obj=lol.mesh.load('mesh/duck.json');
   //scale={x:0.001,y:0.001,z:0.001};
   //lol.mesh.format(obj,null,scale,{x:90,y:0,z:180});
+  lol.icon();
+  lol.css();
   lol.viewport();
   lol.console.init();
   lol.console.log('version',lol.version.get());
   lol.console.log('size');
+  handler=function(e)
+    {
+    lol.pr.w+=e.target.param;
+    if(lol.pr.w<1){lol.pr.w=1;}
+    lol.pr.r=lol.pr.h/lol.pr.w;
+    lol.console.log('pixel w',lol.pr.w,handler,1);
+    lol.config.pr.w=lol.pr.w;
+    lol.localstorage.save();
+    lol.resize();
+    };
+  lol.console.log('pixel w',lol.pr.w,handler,1);
+  handler=function(e)
+    {
+    lol.pr.h+=e.target.param;
+    if(lol.pr.h<1){lol.pr.h=1;}
+    lol.pr.r=lol.pr.h/lol.pr.w;
+    lol.console.log('pixel h',lol.pr.h,handler,1);
+    lol.config.pr.h=lol.pr.h;
+    lol.localstorage.save();
+    lol.resize();
+    };
+  lol.console.log('pixel h',lol.pr.h,handler,1);
   lol.console.hr(0);
   lol.console.log('vertex n',lol.data.vtx.length);
   lol.console.log('face n',lol.data.tri.length/3);
