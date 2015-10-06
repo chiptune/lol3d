@@ -42,7 +42,7 @@ lol.tn=function(txt){return window.document.createTextNode(String(txt));};
 
 lol.version=
   {
-  maj:0,min:3,build:26,beta:true, /* u03b1=alpha,u03b2=beta */
+  maj:0,min:3,build:27,beta:true, /* u03b1=alpha,u03b2=beta */
   get:function()
     {
     var v=lol.version;
@@ -68,13 +68,13 @@ lol.init=function()
       anim:false,
       console:true,
       color:7,
-      zr:192,             /* fov */
+      zr:384,             /* fov */
       pr:{w:3,h:3},       /* pixel ratio */
       r:{x:0,y:0,z:0},    /* rotation vector */
       o:{x:0,y:0,z:0},    /* orientation vector */
-      cam:{x:0,y:0,z:-8}, /* camera position vector */
+      cam:{x:0,y:0,z:-16},/* camera position vector */
       co:{x:0,y:0,z:0},   /* camera orientation vector */
-      lo:{x:-60,y:0,z:0}  /* light orientation vector */
+      lo:{x:-32,y:40,z:0} /* light orientation vector */
       };
     lol.localstorage.save();
     }
@@ -1516,7 +1516,7 @@ lol.console=
       v.innerHTML='<u>'+name.charAt(0)+'</u>'+name.slice(1);
       log=v.outerHTML+'? <a style="float:right">'+(value?'yes':'no')+'</a>';
       }
-    if(lol.util.isstring(value)){log+=(value!=='')?':<a style="float:right">'+value+'</a>':'';}
+    if(lol.util.isstring(value)){log+=':<a style="float:right">'+value+'</a>';}
     if(lol.util.isnumber(value)){log+='='+value;}
     v.innerHTML=log;
     },
