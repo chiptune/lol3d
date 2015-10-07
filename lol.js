@@ -42,7 +42,7 @@ lol.tn=function(txt){return window.document.createTextNode(String(txt));};
 
 lol.version=
   {
-  maj:0,min:3,build:27,beta:true, /* u03b1=alpha,u03b2=beta */
+  maj:0,min:3,build:28,beta:true, /* u03b1=alpha,u03b2=beta */
   get:function()
     {
     var v=lol.version;
@@ -229,28 +229,28 @@ lol.scanline=
   {
   init:function()
     {
-    var i=0,j=0,x,y,a=0.25,cvs=lol.el('canvas'),ctx,el=lol.el('div');
-    cvs.width=4*lol.pr.w;
-    cvs.height=4*lol.pr.h;
+    var i=0,j=0,a=0.25,cvs=lol.el('canvas'),ctx,el=lol.el('div');
+    cvs.width=12;
+    cvs.height=12;
     ctx=cvs.getContext('2d');
     while(j<cvs.height)
       {
       i=0;
-      x=i;//(j/lol.pr.h)%2*2;
       while(i<cvs.width)
         {
-        y=j;//+(i/lol.pr.w)%2;
-        ctx.fillStyle='rgba(248,0,0,'+a+')';
-        ctx.fillRect(x+i,y,1,lol.pr.h-1);
-        ctx.fillStyle='rgba(0,216,0,'+a+')';
-        ctx.fillRect(x+i+1,y,1,lol.pr.h-1);
-        ctx.fillStyle='rgba(0,0,248,'+a+')';
-        ctx.fillRect(x+i+2,y,1,lol.pr.h-1);
-        ctx.fillStyle='rgba(0,0,0,0.6)';
-        ctx.fillRect(x+i,y+2,lol.pr.w,1);
-        i+=lol.pr.w;
+        ctx.fillStyle='rgba(255,0,48,'+a+')';
+        ctx.fillRect(i+j%2,j,1,3);
+        ctx.fillStyle='rgba(32,224,0,'+a+')';
+        ctx.fillRect(i+j%2+1,j,1,3);
+        ctx.fillStyle='rgba(48,0,192,'+a+')';
+        ctx.fillRect(i+((j%2===0)?2:0),j,1,3);
+        ctx.fillStyle='rgba(0,0,0,0.125)';
+        ctx.fillRect(i,j+1,3,1);
+        ctx.fillStyle='rgba(0,0,0,0.5)';
+        ctx.fillRect(i,j+2,3,1);
+        i+=3;
         }
-      j+=lol.pr.h;
+      j+=3;
       }
     el.id=lol.id+'-scanline';
     el.style.position='absolute';
