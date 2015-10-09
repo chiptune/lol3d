@@ -31,6 +31,7 @@ lol.rid=false;    /* frame request id */
 lol.cvs=false;    /* canvas */
 lol.ctx=false;    /* 2d context */
 lol.data={vtx:[],tri:[],col:[]};
+lol.axis={x:-2,y:2.5,z:0};
 lol.light={x:0,y:0,z:-1024};
 lol.norm={x:0.5,y:0.5,z:0.5};
 lol.vec={x:0,y:0,z:0};
@@ -42,7 +43,7 @@ lol.tn=function(txt){return window.document.createTextNode(String(txt));};
 
 lol.version=
   {
-  maj:0,min:3,build:29,beta:true, /* u03b1=alpha,u03b2=beta */
+  maj:0,min:4,build:0,beta:true, /* u03b1=alpha,u03b2=beta */
   get:function()
     {
     var v=lol.version;
@@ -68,14 +69,14 @@ lol.init=function()
       anim:false,
       console:true,
       color:7,
-      zr:384,             /* fov */
+      zr:256,             /* focale */
       pr:{w:3,h:3},       /* pixel ratio */
       r:{x:0,y:0,z:0},    /* rotation vector */
       o:{x:0,y:0,z:0},    /* orientation vector */
-      cam:{x:0,y:0,z:-16},/* camera position vector */
+      cam:{x:0,y:0,z:-10},/* camera position vector */
       cs:{x:0,y:0,z:0},   /* camera source vector */
       co:{x:0,y:0,z:0},   /* camera orientation vector */
-      lo:{x:-32,y:40,z:0} /* light orientation vector */
+      lo:{x:0,y:-45,z:0}  /* light orientation vector */
       };
     lol.localstorage.save();
     }
@@ -133,12 +134,12 @@ lol.init=function()
   handler=function(e)
     {
     lol.zr+=e.target.param;
-    lol.console.log('fov',lol.zr,handler,16);
+    lol.console.log('focale',lol.zr,handler,16);
     lol.config.zr=lol.zr;
     lol.localstorage.save();
     lol.resize();
     };
-  lol.console.log('fov',lol.zr,handler,16);
+  lol.console.log('focale',lol.zr,handler,16);
   handler=function(e)
     {
     lol.pr.w+=e.target.param;
@@ -250,6 +251,7 @@ lol.scanline=
     el.style.position='absolute';
     el.style.display=lol.flag.get('scanline')?'block':'none';
     el.style.backgroundImage='url('+cvs.toDataURL()+')';
+    el.style.zIndex=1;
     window.document.body.appendChild(el);
     },
   show:function()
@@ -345,6 +347,10 @@ lol.vector=
     var vec={x:v2.x-v1.x,y:v2.y-v1.y,z:v2.z-v1.z};
     return Math.sqrt((vec.x*vec.x)+(vec.y*vec.y)+(vec.z*vec.z));
     },
+  ortho:function(a)
+    {
+    return Math.abs(a.x)>Math.abs(a.z)?{x:-a.y,y:a.x,z:0}:{x:0,y:-a.z,z:a.y};
+    },
   norm:function(vec) /* normalize */
     {
     var l=lol.vector.length(lol.vector.o,vec);
@@ -416,7 +422,7 @@ lol.color=
     [160,144,96],
     [96,128,96]
     ],
-  bgd:[72,64,56],
+  bgd:[72,64,48],
   format:function(color)
     {
     color=(typeof color==='object')?color:[0,0,0];
@@ -430,8 +436,9 @@ lol.color=
     {
     var el=lol.el('div');
     el.id=lol.id+'-palette';
-    el.style.float='left';
-    el.style.padding=lol.m+'px 0px 0px '+lol.m+'px';
+    el.style.position='absolute';
+    el.style.left=lol.m+'px';
+    el.style.top=lol.m+'px';
     el.style.font='bold 8px/8px sans-serif';
     el.style.letterSpacing='-1px';
     el.style.textAlign='right';
@@ -847,7 +854,7 @@ lol.fill=
 
 lol.render=function()
   {
-  var i,k,n,test=true,vec,mtx,ls,ld,a,b,c,d,max,
+  var i,k,l,n,test=true,vec,mtx,x,y,ls,ld,a,b,c,d,max,
   raw=[],dat=[],fct=[],norm=[],cull=[],lgt=[],col=lol.util.copy(lol.data.col);
   mtx=lol.matrix.rotation(lol.vector.neg(lol.co)); /* totally not accurate */
   lol.cs=lol.matrix.multiply(lol.cam,mtx);
@@ -896,6 +903,27 @@ lol.render=function()
     k+=3;
     }
   lol.ctx.clearRect(0,0,lol.w,lol.h); /* clear viewport */
+  if(lol.flag.get('axis'))
+    {
+    l=2;
+    k=8;
+    lol.color.set(lol.color.bgd.map(function(v){return v+16;}));
+    mtx=lol.matrix.rotation(lol.co);
+    vec={x:ld.x,y:lol.axis.y,z:ld.z};
+    i=0;
+    while(i<=k)
+      {
+      x=k*l/2;
+      y=-x+i*l;
+      a=lol.vector.transform(lol.cs,lol.vector.add(vec,{x:-x,y:0,z:y}));
+      b=lol.vector.transform(lol.cs,lol.vector.add(vec,{x:x,y:0,z:y}));
+      c=lol.vector.transform(lol.cs,lol.vector.add(vec,{x:y,y:0,z:-x}));
+      d=lol.vector.transform(lol.cs,lol.vector.add(vec,{x:y,y:0,z:x}));
+      lol.plot.line(a,b);
+      lol.plot.line(c,d);
+      i+=1;
+      }
+    }
   if(lol.flag.get('normal'))
     {
     norm.forEach(function(v,i)
@@ -959,9 +987,9 @@ lol.render=function()
       i+=1;
       }
     }
-  if(lol.flag.get('normal'))
+  if(lol.flag.get('axis'))
     {
-    lol.color.set([0,176,248]);
+    lol.color.set([0,192,248]);
     lol.plot.square(lol.vector.transform(lol.cs,ld));
     }
   if(lol.flag.get('wireframe'))
@@ -984,6 +1012,7 @@ lol.render=function()
     {
     lol.color.set([248,248,248]);
     lol.ctx.beginPath();
+    mtx=lol.matrix.rotation(lol.vector.add(lol.r,lol.o));
     lol.data.vtx.forEach(function(v)
       {
       vec=lol.matrix.multiply(v,mtx);
@@ -1015,7 +1044,7 @@ lol.render=function()
       lol.ctx.fill();
       });
     }
-  if(lol.flag.get('light'))
+  if(lol.flag.get('axis'))
     {
     mtx=lol.matrix.rotation(lol.lo);
     ls=lol.matrix.multiply(lol.light,mtx);
@@ -1024,11 +1053,31 @@ lol.render=function()
     vec=lol.vector.sub(ls,lol.vector.mul(a,lol.norm));
     a=lol.vector.transform(lol.cs,ls);
     b=lol.vector.transform(lol.cs,vec);
-    c=Math.round((-lol.vector.norm(ls).z+0.5)*128);
+    c=Math.round((-lol.vector.norm(ls).z+1)*96);
     lol.color.set([lol.color.bgd[0]+c,lol.color.bgd[1]+c,lol.color.bgd[2]]);
     lol.plot.line(a,b);
     lol.plot.square(a);
     }
+  if(lol.flag.get('axis'))
+    {
+    a=lol.vector.transform(lol.cs,lol.axis);
+    mtx=lol.matrix.rotation(lol.co);
+    vec=lol.vector.add(lol.axis,{x:0,y:0,z:-2});
+    b=lol.vector.transform(lol.cs,vec);
+    lol.color.set([0,248,0]);
+    lol.plot.line(a,b);
+    vec=lol.vector.add(lol.axis,{x:0,y:-2,z:0});
+    b=lol.vector.transform(lol.cs,vec);
+    lol.color.set([0,128,248]);
+    lol.plot.line(a,b);
+    vec=lol.vector.add(lol.axis,{x:-2,y:0,z:0});
+    b=lol.vector.transform(lol.cs,vec);
+    lol.color.set([248,0,0]);
+    lol.plot.line(a,b);
+    lol.color.set([248,248,248]);
+    lol.plot.square(a);
+    }
+  //console.log(lol.vector.ortho({x:0,y:0,z:2}));
   };
 
 lol.anim=
@@ -1209,18 +1258,18 @@ lol.mouse=
         }
       if(lol.key.shift)
         {
-        lol.o.y=lol.vec.y+y;
-        lol.o.x=lol.vec.x+x;
+        lol.o.y=(lol.vec.y+y)%360;
+        lol.o.x=(lol.vec.x+x)%360;
         }
       if(lol.key.ctrl)
         {
-        lol.co.y=lol.vec.y+y;
-        lol.co.x=lol.vec.x+x;
+        lol.co.y=(lol.vec.y+y)%360;
+        lol.co.x=(lol.vec.x+x)%360;
         }
       if(lol.key.alt)
         {
-        lol.lo.y=lol.vec.y+y;
-        lol.lo.x=lol.vec.x+x;
+        lol.lo.y=(lol.vec.y+y)%360;
+        lol.lo.x=(lol.vec.x+x)%360;
         }
       if(!lol.config.anim){lol.anim.update();}
       }
@@ -1304,13 +1353,13 @@ lol.key=
     switch(e.keyCode)
       {
       case 27:lol.console.swap();break; /* esc */
-      case 32:break; /* space */
+      case 32:lol.anim.pause();break; /* space */
       case 13:lol.flag.swap('scanline');break;  /* return */
       case 37:lol.o.y=(lol.o.y-22.5)%360;lol.anim.update();break; /* left  */
       case 39:lol.o.y=(lol.o.y+22.5)%360;lol.anim.update();break; /* right */
       case 38:lol.o.x=(lol.o.x-22.5)%360;lol.anim.update();break; /* up    */
       case 40:lol.o.x=(lol.o.x+22.5)%360;lol.anim.update();break; /* down  */
-      case 65:lol.anim.pause();break; /* a */
+      case 65:lol.flag.swap('axis');lol.anim.update();break;      /* a */
       case 86:lol.flag.swap('vertex');lol.anim.update();break;    /* v */
       case 70:lol.flag.swap('face'); lol.anim.update();break;     /* f */
       case 87:lol.flag.swap('wireframe');lol.anim.update();break; /* w */
@@ -1373,6 +1422,7 @@ lol.flag=
   {
   list:
     {
+    axis:true,
     vertex:false,
     face:true,
     wireframe:false,
@@ -1489,13 +1539,12 @@ lol.console=
     col=lol.color.bgd.map(function(v){return v+64;});
     el=lol.el('div');
     el.id=lol.id+'-console';
-    el.style.float='left';
-    el.style.width=lol.console.w+'px';
-    el.style.padding=lol.m+'px 0px 0px '+lol.m+'px';
-    el.style.font='normal 11px/11px monospace';
-    el.style.color=lol.color.format(col);
+    el.style.position='absolute';
     el.style.left=(lol.color.w+lol.m*2)+'px';
     el.style.top=lol.m+'px';
+    el.style.width=lol.console.w+'px';
+    el.style.font='normal 11px/11px monospace';
+    el.style.color=lol.color.format(col);
     el.style.cursor='default';
     el.style.display=lol.config.console?'block':'none';
     el.style.overflow='hidden';
