@@ -43,7 +43,7 @@ lol.tn=function(txt){return window.document.createTextNode(String(txt));};
 
 lol.version=
   {
-  maj:0,min:4,build:0,beta:true, /* u03b1=alpha,u03b2=beta */
+  maj:0,min:4,build:1,beta:true, /* u03b1=alpha,u03b2=beta */
   get:function()
     {
     var v=lol.version;
@@ -68,12 +68,12 @@ lol.init=function()
       flag:lol.flag.list,
       anim:false,
       console:true,
-      color:7,
-      zr:256,             /* focale */
+      color:{n:6,s3:5},
+      zr:512,             /* focale */
       pr:{w:3,h:3},       /* pixel ratio */
       r:{x:0,y:0,z:0},    /* rotation vector */
       o:{x:0,y:0,z:0},    /* orientation vector */
-      cam:{x:0,y:0,z:-10},/* camera position vector */
+      cam:{x:0,y:0,z:-18},/* camera position vector */
       cs:{x:0,y:0,z:0},   /* camera source vector */
       co:{x:0,y:0,z:0},   /* camera orientation vector */
       lo:{x:0,y:-45,z:0}  /* light orientation vector */
@@ -83,7 +83,8 @@ lol.init=function()
   lol.zr=lol.config.zr;
   lol.pr={w:lol.config.pr.w,h:lol.config.pr.h};
   lol.pr.r=lol.pr.h/lol.pr.w;
-  lol.color.n=lol.config.color;
+  lol.color.n=lol.config.color.n;
+  lol.color.s3=lol.config.color.s3;
   lol.r=lol.config.r;
   lol.o=lol.config.o;
   lol.cam=lol.config.cam;
@@ -133,15 +134,6 @@ lol.init=function()
   lol.console.hr(0);
   handler=function(e)
     {
-    lol.zr+=e.target.param;
-    lol.console.log('focale',lol.zr,handler,16);
-    lol.config.zr=lol.zr;
-    lol.localstorage.save();
-    lol.resize();
-    };
-  lol.console.log('focale',lol.zr,handler,16);
-  handler=function(e)
-    {
     lol.pr.w+=e.target.param;
     if(lol.pr.w<1){lol.pr.w=1;}
     lol.pr.r=lol.pr.h/lol.pr.w;
@@ -163,6 +155,15 @@ lol.init=function()
     };
   lol.console.log('pixel h',lol.pr.h,handler,1);
   lol.console.log('size');
+  handler=function(e)
+    {
+    lol.zr+=e.target.param;
+    lol.console.log('focale',lol.zr,handler,16);
+    lol.config.zr=lol.zr;
+    lol.localstorage.save();
+    lol.resize();
+    };
+  lol.console.log('focale',lol.zr,handler,16);
   lol.console.hr(1);
   lol.console.log('vertex n',lol.data.vtx.length);
   lol.console.log('face n',lol.data.tri.length/3);
@@ -420,7 +421,8 @@ lol.color=
     [128,112,160],
     [160,112,128],
     [160,144,96],
-    [96,128,96]
+    [96,128,96],
+    [96,128,160]
     ],
   bgd:[72,64,48],
   format:function(color)
@@ -454,11 +456,20 @@ lol.color=
     var el=lol.i(lol.id+'-palette');
     while(el.firstChild){el.removeChild(el.firstChild);}
     lol.color.list.forEach(function(v,i){lol.color.generate(v,i);});
-    lol.config.color=lol.color.n;
+    lol.config.color.n=lol.color.n;
+    lol.config.color.s3=lol.color.s3;
     lol.localstorage.save();
     lol.console.log('color',lol.color.n,function(e)
       {
       lol.color.n+=e.target.param;
+      lol.color.n=lol.color.n.clamp(1,64);
+      lol.color.update();
+      lol.anim.update();
+      },1);
+    lol.console.log('specular',lol.color.s3,function(e)
+      {
+      lol.color.s3+=e.target.param;
+      lol.color.s3=lol.color.s3.clamp(1,lol.color.n);
       lol.color.update();
       lol.anim.update();
       },1);
@@ -469,9 +480,11 @@ lol.color=
     r=c[0];
     g=c[1];
     b=c[2];
-    s=Math.round(n*0.1);
-    e=Math.round(n*0.3);
-    l=Math.round(n*0.6);
+    lol.color.s1=Math.round(n*0.2);
+    lol.color.s2=Math.round(n*0.3);
+    s=Math.round(lol.color.s1);
+    e=Math.round(lol.color.s2);
+    l=Math.round(n*1/n*(lol.color.s3-1));
     while(i<s)
       {
       col[i]=[
