@@ -43,7 +43,7 @@ lol.tn=function(txt){return window.document.createTextNode(String(txt));};
 
 lol.version=
   {
-  maj:0,min:4,build:1,beta:true, /* u03b1=alpha,u03b2=beta */
+  maj:0,min:4,build:2,beta:true, /* u03b1=alpha,u03b2=beta */
   get:function()
     {
     var v=lol.version;
@@ -68,15 +68,15 @@ lol.init=function()
       flag:lol.flag.list,
       anim:false,
       console:true,
-      color:{n:6,s3:5},
-      zr:512,             /* focale */
+      color:{n:6,stop:[0.1,0.3,0.6]},
+      zr:384,             /* focale */
       pr:{w:3,h:3},       /* pixel ratio */
       r:{x:0,y:0,z:0},    /* rotation vector */
       o:{x:0,y:0,z:0},    /* orientation vector */
-      cam:{x:0,y:0,z:-18},/* camera position vector */
+      cam:{x:0,y:1,z:-16},/* camera position vector */
       cs:{x:0,y:0,z:0},   /* camera source vector */
-      co:{x:0,y:0,z:0},   /* camera orientation vector */
-      lo:{x:0,y:-45,z:0}  /* light orientation vector */
+      co:{x:22.5,y:0,z:0},/* camera orientation vector */
+      lo:{x:45,y:0,z:0}   /* light orientation vector */
       };
     lol.localstorage.save();
     }
@@ -84,7 +84,7 @@ lol.init=function()
   lol.pr={w:lol.config.pr.w,h:lol.config.pr.h};
   lol.pr.r=lol.pr.h/lol.pr.w;
   lol.color.n=lol.config.color.n;
-  lol.color.s3=lol.config.color.s3;
+  lol.color.stop=lol.config.color.stop;
   lol.r=lol.config.r;
   lol.o=lol.config.o;
   lol.cam=lol.config.cam;
@@ -165,12 +165,13 @@ lol.init=function()
     };
   lol.console.log('focale',lol.zr,handler,16);
   lol.console.hr(1);
-  lol.console.log('vertex n',lol.data.vtx.length);
-  lol.console.log('face n',lol.data.tri.length/3);
   lol.color.update(1);
   lol.console.hr(2);
-  window.Object.keys(lol.flag.list).forEach(function(v){lol.flag.set(v);});
+  lol.console.log('vertex n',lol.data.vtx.length);
+  lol.console.log('face n',lol.data.tri.length/3);
   lol.console.hr(3);
+  window.Object.keys(lol.flag.list).forEach(function(v){lol.flag.set(v);});
+  lol.console.hr(4);
   window.document.body.style.backgroundColor=lol.color.format(lol.color.bgd);
   window.addEventListener('resize',lol.resize,false);
   window.addEventListener('keydown',lol.key.down,false);
@@ -185,14 +186,14 @@ lol.init=function()
   lol.timer=lol.util.time();
   lol.fps.init();
   lol.anim[lol.config.anim?'start':'stop']();
-  lol.console.hr(4);
+  lol.console.hr(7);
   lol.console.log('validate',null,lol.validate);
   lol.console.log('reset',null,function()
     {
     lol.localstorage.reset();
     window.location.reload();
     });
-  lol.console.hr(5);
+  lol.console.hr(6);
   lol.key.log();
   };
 
@@ -453,11 +454,11 @@ lol.color=
     },
   update:function()
     {
-    var el=lol.i(lol.id+'-palette');
+    var el=lol.i(lol.id+'-palette'),v;
     while(el.firstChild){el.removeChild(el.firstChild);}
     lol.color.list.forEach(function(v,i){lol.color.generate(v,i);});
     lol.config.color.n=lol.color.n;
-    lol.config.color.s3=lol.color.s3;
+    lol.config.color.stop=lol.color.stop;
     lol.localstorage.save();
     lol.console.log('color',lol.color.n,function(e)
       {
@@ -466,13 +467,29 @@ lol.color=
       lol.color.update();
       lol.anim.update();
       },1);
-    lol.console.log('specular',lol.color.s3,function(e)
+    lol.console.log('shadow',lol.color.stop[0],function(e)
       {
-      lol.color.s3+=e.target.param;
-      lol.color.s3=lol.color.s3.clamp(1,lol.color.n);
+      lol.color.stop[0]+=e.target.param;
+      lol.color.stop[0]=lol.color.stop[0].clamp(0,lol.color.stop[1]);
       lol.color.update();
       lol.anim.update();
-      },1);
+      },0.05);
+    lol.console.log('medium',lol.color.stop[1],function(e)
+      {
+      lol.color.stop[1]+=e.target.param;
+      lol.color.stop[1]=lol.color.stop[1].clamp(lol.color.stop[0],lol.color.stop[2]);
+      lol.color.update();
+      lol.anim.update();
+      },0.05);
+    lol.console.log('specular',lol.color.stop[2],function(e)
+      {
+      lol.color.stop[2]+=e.target.param;
+      lol.color.stop[2]=lol.color.stop[2].clamp(lol.color.stop[1],1);
+      lol.color.update();
+      lol.anim.update();
+      },0.05);
+    v=lol.color.stop.map(function(v){return Math.round(lol.color.n*v);});
+    lol.console.log('gradient',v.join(','));
     },
   generate:function(c,p)
     {
@@ -480,11 +497,11 @@ lol.color=
     r=c[0];
     g=c[1];
     b=c[2];
-    lol.color.s1=Math.round(n*0.2);
-    lol.color.s2=Math.round(n*0.3);
-    s=Math.round(lol.color.s1);
-    e=Math.round(lol.color.s2);
-    l=Math.round(n*1/n*(lol.color.s3-1));
+    lol.color.stop[1]=lol.color.stop[1].clamp(lol.color.stop[0],1);
+    lol.color.stop[2]=lol.color.stop[2].clamp(lol.color.stop[1],1);
+    s=Math.round(n*lol.color.stop[0]);
+    e=Math.round(n*lol.color.stop[1]);
+    l=Math.round(n*lol.color.stop[2]);
     while(i<s)
       {
       col[i]=[
@@ -936,6 +953,22 @@ lol.render=function()
       lol.plot.line(c,d);
       i+=1;
       }
+    a=lol.vector.transform(lol.cs,lol.axis);
+    mtx=lol.matrix.rotation(lol.co);
+    vec=lol.vector.add(lol.axis,{x:0,y:0,z:-2});
+    b=lol.vector.transform(lol.cs,vec);
+    lol.color.set([0,248,0]);
+    lol.plot.line(a,b);
+    vec=lol.vector.add(lol.axis,{x:0,y:-2,z:0});
+    b=lol.vector.transform(lol.cs,vec);
+    lol.color.set([0,128,248]);
+    lol.plot.line(a,b);
+    vec=lol.vector.add(lol.axis,{x:-2,y:0,z:0});
+    b=lol.vector.transform(lol.cs,vec);
+    lol.color.set([248,0,0]);
+    lol.plot.line(a,b);
+    lol.color.set([248,248,248]);
+    lol.plot.square(a);
     }
   if(lol.flag.get('normal'))
     {
@@ -986,11 +1019,11 @@ lol.render=function()
         {
         if(lol.flag.get('light'))
           {
-          c=Math.round(lgt[i]*max); if(c<0){c=0;}
+          c=Math.round(lgt[i]*max).clamp(0,max);
           }
         else
           {
-          c=Math.floor(lol.color.n/2)*4;
+          c=Math.round(lol.color.n*lol.color.stop[1])*4;
           }
         k=i*3;
         d=0;
@@ -1069,25 +1102,6 @@ lol.render=function()
     c=Math.round((-lol.vector.norm(ls).z+1)*96);
     lol.color.set([lol.color.bgd[0]+c,lol.color.bgd[1]+c,lol.color.bgd[2]]);
     lol.plot.line(a,b);
-    lol.plot.square(a);
-    }
-  if(lol.flag.get('axis'))
-    {
-    a=lol.vector.transform(lol.cs,lol.axis);
-    mtx=lol.matrix.rotation(lol.co);
-    vec=lol.vector.add(lol.axis,{x:0,y:0,z:-2});
-    b=lol.vector.transform(lol.cs,vec);
-    lol.color.set([0,248,0]);
-    lol.plot.line(a,b);
-    vec=lol.vector.add(lol.axis,{x:0,y:-2,z:0});
-    b=lol.vector.transform(lol.cs,vec);
-    lol.color.set([0,128,248]);
-    lol.plot.line(a,b);
-    vec=lol.vector.add(lol.axis,{x:-2,y:0,z:0});
-    b=lol.vector.transform(lol.cs,vec);
-    lol.color.set([248,0,0]);
-    lol.plot.line(a,b);
-    lol.color.set([248,248,248]);
     lol.plot.square(a);
     }
   //console.log(lol.vector.ortho({x:0,y:0,z:2}));
@@ -1368,10 +1382,10 @@ lol.key=
       case 27:lol.console.swap();break; /* esc */
       case 32:lol.anim.pause();break; /* space */
       case 13:lol.flag.swap('scanline');break;  /* return */
-      case 37:lol.o.y=(lol.o.y-22.5)%360;lol.anim.update();break; /* left  */
-      case 39:lol.o.y=(lol.o.y+22.5)%360;lol.anim.update();break; /* right */
-      case 38:lol.o.x=(lol.o.x-22.5)%360;lol.anim.update();break; /* up    */
-      case 40:lol.o.x=(lol.o.x+22.5)%360;lol.anim.update();break; /* down  */
+      case 37:lol.co.y=(lol.co.y-22.5)%360;lol.anim.update();break; /* left  */
+      case 39:lol.co.y=(lol.co.y+22.5)%360;lol.anim.update();break; /* right */
+      case 38:lol.co.x=(lol.co.x-22.5)%360;lol.anim.update();break; /* up    */
+      case 40:lol.co.x=(lol.co.x+22.5)%360;lol.anim.update();break; /* down  */
       case 65:lol.flag.swap('axis');lol.anim.update();break;      /* a */
       case 86:lol.flag.swap('vertex');lol.anim.update();break;    /* v */
       case 70:lol.flag.swap('face'); lol.anim.update();break;     /* f */
@@ -1578,7 +1592,7 @@ lol.console=
       log=v.outerHTML+'? <a style="float:right">'+(value?'yes':'no')+'</a>';
       }
     if(lol.util.isstring(value)){log+=':<a style="float:right">'+value+'</a>';}
-    if(lol.util.isnumber(value)){log+='='+value;}
+    if(lol.util.isnumber(value)){log+='='+(Math.round(value*100)/100);}
     v.innerHTML=log;
     },
   add:function(name,value,handler,param)
