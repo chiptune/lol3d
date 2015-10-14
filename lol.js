@@ -30,8 +30,8 @@ lol.timer=0;
 lol.rid=false;    /* frame request id */
 lol.cvs=false;    /* canvas */
 lol.ctx=false;    /* 2d context */
-lol.data={vtx:[],tri:[],col:[]};
-lol.axis={x:-3,y:2.5,z:0};
+lol.data={vtx:[],tri:[],col:[],grp:[]};
+lol.axis={x:-2,y:2.5,z:-2};
 lol.light={x:0,y:0,z:-1024};
 lol.norm={x:0.5,y:0.5,z:0.5};
 lol.vec={x:0,y:0,z:0};
@@ -43,7 +43,7 @@ lol.tn=function(txt){return window.document.createTextNode(String(txt));};
 
 lol.version=
   {
-  maj:0,min:4,build:3,beta:true, /* u03b1=alpha,u03b2=beta */
+  maj:0,min:4,build:5,beta:true, /* u03b1=alpha,u03b2=beta */
   get:function()
     {
     var v=lol.version;
@@ -69,14 +69,14 @@ lol.init=function()
       anim:false,
       console:true,
       color:{n:7,stop:[0.2,0.4,0.7]},
-      zr:384,             /* focale */
-      pr:{w:3,h:3},       /* pixel ratio */
-      r:{x:0,y:0,z:0},    /* rotation vector */
-      o:{x:0,y:0,z:0},    /* orientation vector */
-      cam:{x:0,y:1,z:-16},/* camera position vector */
-      cs:{x:0,y:0,z:0},   /* camera source vector */
-      co:{x:22.5,y:0,z:0},/* camera orientation vector */
-      lo:{x:45,y:0,z:0}   /* light orientation vector */
+      zr:384,            /* focale */
+      pr:{w:3,h:3},      /* pixel ratio */
+      o:{x:0,y:0,z:0},   /* orientation vector */
+      r:{x:32,y:0,z:0},  /* rotation vector */
+      cam:{x:0,y:2.5,z:-16},/* camera position vector */
+      cs:{x:0,y:0,z:0},  /* camera source vector */
+      co:{x:45,y:0,z:0}, /* camera orientation vector */
+      lo:{x:45,y:0,z:0}  /* light orientation vector */
       };
     lol.localstorage.save();
     }
@@ -120,11 +120,12 @@ lol.init=function()
   lol.mesh.format(mesh.corner,{x:-s,y: s,z: s},scale,{x:0,y:90,z:180});
   lol.mesh.format(mesh.corner,{x: s,y: s,z: s},scale,{x:0,y:180,z:180});
   */
-  lol.mesh.format(mesh.icosahedron,null,{x:2.0,y:2.0,z:2.0},{x:-30,y:0,z:0});
-  lol.mesh.format(mesh.cube,{x:3.5,y:2,z:-3.5},{x:0.5,y:0.5,z:0.5});
+  lol.mesh.format(mesh.icosahedron,1,null,{x:2.0,y:2.0,z:2.0});
+  lol.mesh.format(mesh.cube,0,{x:3.5,y:2,z:-3.5},{x:0.5,y:0.5,z:0.5});
+  lol.mesh.format(mesh.cube,0,{x:-3.5,y:1.5,z:3.5},{x:0.25,y:1.0,z:0.25});
   //var obj=lol.mesh.load('mesh/duck.json');
-  //scale={x:0.001,y:0.001,z:0.001};
-  //lol.mesh.format(obj,null,scale,{x:90,y:0,z:180});
+  //scale={x:0.002,y:0.002,z:0.002};
+  //lol.mesh.format(obj,0,{x:0,y:0.625,z:0},scale,{x:90,y:0,z:180});
   lol.icon();
   lol.css();
   lol.viewport();
@@ -884,15 +885,23 @@ lol.fill=
 
 lol.render=function()
   {
-  var i,k,l,n,test=true,vec,mtx,x,y,ls,ld,a,b,c,d,max,
-  raw=[],dat=[],fct=[],norm=[],cull=[],lgt=[],col=lol.util.copy(lol.data.col);
-  mtx=lol.matrix.rotation(lol.vector.neg(lol.co)); /* totally not accurate */
-  lol.cs=lol.matrix.multiply(lol.cam,mtx);
-  mtx=lol.matrix.rotation(lol.vector.neg(lol.lo));
-  ls=lol.matrix.multiply(lol.light,mtx);
+  var i,k,l,n,test=true,vec,mtx,x,y,cm,ls,ld,lm,a,b,c,d,max,
+  tmp=[],raw=[],dat=[],fct=[],norm=[],cull=[],lgt=[],col=[];
+  cm=lol.matrix.rotation(lol.vector.neg(lol.co)); /* totally not accurate */
+  lol.cs=lol.matrix.multiply(lol.cam,cm);
+  lm=lol.matrix.rotation(lol.vector.neg(lol.lo));
+  ls=lol.matrix.multiply(lol.light,lm);
   ld=lol.vector.o;
-  mtx=lol.matrix.rotation(lol.vector.add(lol.r,lol.o));
-  lol.data.tri.forEach(function(v,i){raw[i]=lol.matrix.multiply(v,mtx);});
+  mtx=[
+    lol.matrix.rotation(lol.o),
+    lol.matrix.rotation(lol.vector.add(lol.o,lol.r))
+    ];
+  lol.data.vtx.forEach(function(v,i)
+    {
+    tmp[i]=lol.matrix.multiply(v,mtx[lol.data.grp[i]]);
+    });
+  lol.data.tri.forEach(function(v,i){raw[i]=tmp[v];});
+  col=lol.util.copy(lol.data.col);
   n=raw.length/3;
   while(test) /* bubble sort */
     {
@@ -906,7 +915,7 @@ lol.render=function()
         vec=raw[k-1];raw[k-1]=raw[k+2];raw[k+2]=vec;
         vec=raw[k-2];raw[k-2]=raw[k+1];raw[k+1]=vec;
         vec=raw[k-3];raw[k-3]=raw[k];raw[k]=vec;
-        vec=col[i-1];col[i-1]=col[i];col[i]=vec;
+        c=col[i-1];col[i-1]=col[i];col[i]=c;
         test=true;
         }
       i+=1;
@@ -914,9 +923,9 @@ lol.render=function()
     n-=1;
     }
   raw.forEach(function(v,i){dat[i]=lol.vector.transform(lol.cs,v);});
-  n=raw.length/3;
   i=0;
   k=0;
+  n=raw.length/3;
   while(i<n)
     {
     fct[i]=
@@ -1078,11 +1087,9 @@ lol.render=function()
     {
     lol.color.set([248,248,248]);
     lol.ctx.beginPath();
-    mtx=lol.matrix.rotation(lol.vector.add(lol.r,lol.o));
-    lol.data.vtx.forEach(function(v)
+    lol.data.vtx.forEach(function(v,i)
       {
-      vec=lol.matrix.multiply(v,mtx);
-      lol.plot.pixel(lol.vector.transform(lol.cs,vec));
+      lol.plot.pixel(lol.vector.transform(lol.cs,tmp[i]));
       });
     lol.ctx.closePath();
     lol.ctx.fill();
@@ -1112,8 +1119,8 @@ lol.render=function()
     }
   if(lol.flag.get('axis'))
     {
-    mtx=lol.matrix.rotation(lol.lo);
-    ls=lol.matrix.multiply(lol.light,mtx);
+    lm=lol.matrix.rotation(lol.lo);
+    ls=lol.matrix.multiply(lol.light,lm);
     ls=lol.vector.mul(lol.vector.norm(ls),{x:3.25,y:3.25,z:3.25});
     a=lol.vector.norm(lol.vector.add(ls,ld));
     vec=lol.vector.sub(ls,lol.vector.mul(a,lol.norm));
@@ -1305,8 +1312,8 @@ lol.mouse=
         }
       if(lol.key.shift)
         {
-        lol.o.y=(lol.vec.y+y)%360;
-        lol.o.x=(lol.vec.x+x)%360;
+        lol.r.y=(lol.vec.y+y)%360;
+        lol.r.x=(lol.vec.x+x)%360;
         }
       if(lol.key.ctrl)
         {
@@ -1334,8 +1341,8 @@ lol.mouse=
       }
     if(lol.key.shift)
       {
-      lol.vec=lol.util.clone(lol.o);
-      lol.config.o=lol.o;
+      lol.vec=lol.util.clone(lol.r);
+      lol.config.r=lol.r;
       }
     if(lol.key.ctrl)
       {
@@ -1406,13 +1413,13 @@ lol.key=
       case 39:lol.co.y=(lol.co.y+22.5)%360;lol.anim.update();break; /* right */
       case 38:lol.co.x=(lol.co.x-22.5)%360;lol.anim.update();break; /* up    */
       case 40:lol.co.x=(lol.co.x+22.5)%360;lol.anim.update();break; /* down  */
-      case 65:lol.flag.swap('axis');lol.anim.update();break;      /* a */
-      case 86:lol.flag.swap('vertex');lol.anim.update();break;    /* v */
-      case 70:lol.flag.swap('face'); lol.anim.update();break;     /* f */
-      case 87:lol.flag.swap('wireframe');lol.anim.update();break; /* w */
-      case 78:lol.flag.swap('normal');lol.anim.update();break;    /* n */
-      case 76:lol.flag.swap('light');lol.anim.update();break;     /* l */
-      case 68:lol.flag.swap('dither');lol.anim.update();break;    /* d */
+      case 65:lol.flag.swap('axis');lol.anim.update();break;        /* a */
+      case 86:lol.flag.swap('vertex');lol.anim.update();break;      /* v */
+      case 70:lol.flag.swap('face'); lol.anim.update();break;       /* f */
+      case 87:lol.flag.swap('wireframe');lol.anim.update();break;   /* w */
+      case 78:lol.flag.swap('normal');lol.anim.update();break;      /* n */
+      case 76:lol.flag.swap('light');lol.anim.update();break;       /* l */
+      case 68:lol.flag.swap('dither');lol.anim.update();break;      /* d */
       }
     }
   };
@@ -1436,13 +1443,14 @@ lol.mesh=
       });
     return {vtx:vtx,tri:tri,col:col};
     },
-  format:function(mesh,p,s,o)
+  format:function(mesh,g,p,s,o)
     {
-    mesh=mesh||{vtx:[],tri:[],col:[]};
+    mesh=mesh||{vtx:[],tri:[],col:[],grp:[]};
+    g=g||0;
     p=p||{x:0,y:0,z:0};
     s=s||{x:1,y:1,z:1};
     o=o||{x:0,y:0,z:0};
-    var i=0,k,vtx=[],tri=[],mtx;
+    var i=0,k,n=0,vtx=[],tri=[],grp=[],mtx;
     mtx=lol.matrix.rotation(lol.vector.add(lol.vector.o,o));
     while(i<mesh.vtx.length/3)
       {
@@ -1450,18 +1458,20 @@ lol.mesh=
       vtx[i]={x:mesh.vtx[k],y:mesh.vtx[k+1],z:mesh.vtx[k+2]};
       i+=1;
       }
+    n=lol.data.vtx.length;
+    mesh.tri.forEach(function(v,i){tri[i]=v+n;});
     vtx.forEach(function(v,i,a)
       {
       v=lol.matrix.multiply(v,mtx); /* orientation */
       v=lol.vector.mul(v,s);        /* scale */
       v=lol.vector.add(v,p);        /* position */
       a[i]=v;
+      grp[i]=g;
       });
-    tri=[];
-    mesh.tri.forEach(function(v,i){tri[i]=vtx[v];});
     lol.data.vtx=lol.data.vtx.concat(vtx);
     lol.data.tri=lol.data.tri.concat(tri);
     lol.data.col=lol.data.col.concat(mesh.col);
+    lol.data.grp=lol.data.grp.concat(grp);
     }
   };
 
