@@ -9,7 +9,7 @@
 |################################### LOL 3D ###################################|
 `-----------------------------------------------------------------------------*/
 
-/*jslint white,this,maxlen:80*/
+/*jslint white,this,debug,maxlen:80*/
 /*global window,jslint*/
 
 Number.prototype.clamp=function(min,max)
@@ -31,9 +31,9 @@ lol.rid=false;    /* frame request id */
 lol.cvs=false;    /* canvas */
 lol.ctx=false;    /* 2d context */
 lol.data={vtx:[],tri:[],col:[],grp:[]};
-lol.axis={x:-2,y:2.5,z:-2};
+lol.axis={x:-2,y:0,z:-2};
 lol.light={x:0,y:0,z:-1024};
-lol.norm={x:0.5,y:0.5,z:0.5};
+lol.norm={x:0.75,y:0.75,z:0.75};
 lol.vec={x:0,y:0,z:0};
 lol.m=4;          /* margin */
 
@@ -43,7 +43,7 @@ lol.tn=function(txt){return window.document.createTextNode(String(txt));};
 
 lol.version=
   {
-  maj:0,min:4,build:5,beta:true, /* u03b1=alpha,u03b2=beta */
+  maj:0,min:4,build:6,beta:true, /* u03b1=alpha,u03b2=beta */
   get:function()
     {
     var v=lol.version;
@@ -69,14 +69,14 @@ lol.init=function()
       anim:false,
       console:true,
       color:{n:7,stop:[0.2,0.4,0.7]},
-      zr:384,            /* focale */
-      pr:{w:3,h:3},      /* pixel ratio */
-      o:{x:0,y:0,z:0},   /* orientation vector */
-      r:{x:32,y:0,z:0},  /* rotation vector */
-      cam:{x:0,y:2.5,z:-16},/* camera position vector */
-      cs:{x:0,y:0,z:0},  /* camera source vector */
-      co:{x:45,y:0,z:0}, /* camera orientation vector */
-      lo:{x:45,y:0,z:0}  /* light orientation vector */
+      zr:256,             /* focale */
+      pr:{w:3,h:3},       /* pixel ratio */
+      p:{x:0,y:-2.5,z:0}, /* position vector */
+      r:{x:0,y:0,z:0},    /* rotation vector */
+      cam:{x:0,y:0,z:-12},/* camera position vector */
+      cs:{x:0,y:0,z:0},   /* camera source vector */
+      co:{x:45,y:0,z:0},  /* camera orientation vector */
+      lo:{x:0,y:0,z:0}    /* light orientation vector */
       };
     lol.localstorage.save();
     }
@@ -86,7 +86,6 @@ lol.init=function()
   lol.color.n=lol.config.color.n;
   lol.color.stop=lol.config.color.stop;
   lol.r=lol.config.r;
-  lol.o=lol.config.o;
   lol.cam=lol.config.cam;
   lol.cs=lol.config.cs;
   lol.co=lol.config.co;
@@ -120,9 +119,9 @@ lol.init=function()
   lol.mesh.format(mesh.corner,{x:-s,y: s,z: s},scale,{x:0,y:90,z:180});
   lol.mesh.format(mesh.corner,{x: s,y: s,z: s},scale,{x:0,y:180,z:180});
   */
-  lol.mesh.format(mesh.icosahedron,1,null,{x:2.0,y:2.0,z:2.0});
-  lol.mesh.format(mesh.cube,0,{x:3.5,y:2,z:-3.5},{x:0.5,y:0.5,z:0.5});
-  lol.mesh.format(mesh.cube,0,{x:-3.5,y:1.5,z:3.5},{x:0.25,y:1.0,z:0.25});
+  lol.mesh.format(mesh.icosahedron,1,lol.p,{x:2,y:2,z:2},{x:32,y:0,z:0});
+  lol.mesh.format(mesh.cube,0,{x:3.5,y:-0.5,z:-3.5},{x:0.5,y:0.5,z:0.5});
+  lol.mesh.format(mesh.cube,0,{x:-3.5,y:-1,z:3.5},{x:0.25,y:1,z:0.25});
   //var obj=lol.mesh.load('mesh/duck.json');
   //scale={x:0.002,y:0.002,z:0.002};
   //lol.mesh.format(obj,0,{x:0,y:0.625,z:0},scale,{x:90,y:0,z:180});
@@ -401,9 +400,8 @@ lol.vector=
   transform:function(cam,vec)
     {
     var mtx=lol.matrix.rotation(lol.co),z;
-    vec=lol.vector.sub(cam,vec);
     vec=lol.matrix.multiply(vec,mtx);
-    vec=lol.vector.add(cam,vec);
+    vec=lol.vector.sub(lol.cam,vec);
     z=(vec.z-cam.z)/lol.zr;
     if(z>0){z=0;}
     return {
@@ -416,7 +414,7 @@ lol.color=
   {
   n:0,
   w:14,
-  h:14,
+  h:12,
   pal:[],
   list:[
     [128,128,128],
@@ -885,20 +883,25 @@ lol.fill=
 
 lol.render=function()
   {
-  var i,k,l,n,test=true,vec,mtx,x,y,cm,ls,ld,lm,a,b,c,d,max,
+  var i,k,l,n,test=true,vec,mtx,x,y,ls,ld,lm,a,b,c,d,max,
   tmp=[],raw=[],dat=[],fct=[],norm=[],cull=[],lgt=[],col=[];
-  cm=lol.matrix.rotation(lol.vector.neg(lol.co)); /* totally not accurate */
-  lol.cs=lol.matrix.multiply(lol.cam,cm);
-  lm=lol.matrix.rotation(lol.vector.neg(lol.lo));
+  lol.cs=lol.matrix.multiply(lol.vector.o,lol.matrix.rotation(lol.co));
+  lm=lol.matrix.rotation(lol.lo);
   ls=lol.matrix.multiply(lol.light,lm);
   ld=lol.vector.o;
-  mtx=[
-    lol.matrix.rotation(lol.o),
-    lol.matrix.rotation(lol.vector.add(lol.o,lol.r))
-    ];
+  mtx=[lol.matrix.rotation(lol.vector.o),lol.matrix.rotation(lol.r)];
   lol.data.vtx.forEach(function(v,i)
     {
-    tmp[i]=lol.matrix.multiply(v,mtx[lol.data.grp[i]]);
+    if(lol.data.grp[i]===0)
+      {
+      tmp[i]=lol.matrix.multiply(v,mtx[0]);
+      }
+    else
+      {
+      //vec=lol.vector.sub(v,lol.p);
+      //tmp[i]=lol.vector.add(lol.p,lol.matrix.multiply(vec,mtx[1]));
+      tmp[i]=lol.matrix.multiply(v,mtx[1]);
+      }
     });
   lol.data.tri.forEach(function(v,i){raw[i]=tmp[v];});
   col=lol.util.copy(lol.data.col);
@@ -1121,7 +1124,7 @@ lol.render=function()
     {
     lm=lol.matrix.rotation(lol.lo);
     ls=lol.matrix.multiply(lol.light,lm);
-    ls=lol.vector.mul(lol.vector.norm(ls),{x:3.25,y:3.25,z:3.25});
+    ls=lol.vector.mul(lol.vector.norm(ls),{x:4,y:4,z:4});
     a=lol.vector.norm(lol.vector.add(ls,ld));
     vec=lol.vector.sub(ls,lol.vector.mul(a,lol.norm));
     a=lol.vector.transform(lol.cs,ls);
@@ -1141,7 +1144,7 @@ lol.anim=
     {
     var vec;
     lol.render();
-    vec=lol.vector.add(lol.r,lol.o);
+    vec=lol.r;
     lol.console.log('mesh rx',lol.util.sign(vec.x)+vec.x.toFixed(1)+'°');
     lol.console.log('mesh ry',lol.util.sign(vec.y)+vec.y.toFixed(1)+'°');
     lol.console.log('mesh rz',lol.util.sign(vec.z)+vec.z.toFixed(1)+'°');
@@ -1151,7 +1154,7 @@ lol.anim=
     lol.console.log('light ry',lol.util.sign(vec.y)+vec.y.toFixed(1)+'°');
     lol.console.log('light rz',lol.util.sign(vec.z)+vec.z.toFixed(1)+'°');
     lol.console.hr(6);
-    vec=lol.cs;
+    vec=lol.cam;
     lol.console.log('cam px',lol.util.sign(vec.x)+vec.x.toFixed(1));
     lol.console.log('cam py',lol.util.sign(vec.y)+vec.y.toFixed(1));
     lol.console.log('cam pz',lol.util.sign(vec.z)+vec.z.toFixed(1));
@@ -1172,9 +1175,9 @@ lol.anim=
   rotate:function()
     {
     var a=(lol.util.time()-lol.timer)/16;
-    lol.r.x=(lol.o.x+a/2)%360;
-    lol.r.y=(lol.o.y+a)%360;
-    lol.r.z=(lol.o.z+a/2)%360;
+    lol.r.x=(lol.co.x+a/2)%360;
+    lol.r.y=(lol.co.y+a)%360;
+    lol.r.z=(lol.co.z+a/2)%360;
     },
   start:function()
     {
@@ -1480,6 +1483,7 @@ lol.flag=
   list:
     {
     axis:true,
+    horizon:true,
     vertex:false,
     face:true,
     wireframe:false,
@@ -1735,6 +1739,7 @@ lol.validate=function()
         el.style.top=lol.m+'px';
         el.style.font='normal 11px/11px monospace';
         el.style.color=lol.color.format(col);
+        el.style.zIndex=2;
         }
       el.innerHTML=txt;
       window.document.body.appendChild(el);
