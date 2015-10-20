@@ -27,15 +27,15 @@ mesh=mesh||{};
 var lol={id:id};
 
 lol.timer=0;
-lol.rid=false;    /* frame request id */
-lol.cvs=false;    /* canvas */
-lol.ctx=false;    /* 2d context */
+lol.rid=false; /* frame request id */
+lol.cvs=false; /* canvas */
+lol.ctx=false; /* 2d context */
 lol.data={vtx:[],tri:[],col:[],grp:[]};
 lol.axis={x:-2,y:0,z:-2};
 lol.light={x:0,y:0,z:-1024};
 lol.norm={x:0.75,y:0.75,z:0.75};
 lol.vec={x:0,y:0,z:0};
-lol.m=4;          /* margin */
+lol.m=4;       /* margin */
 
 lol.i=function(id){return window.document.getElementById(String(id));};
 lol.el=function(el){return window.document.createElement(String(el));};
@@ -43,7 +43,7 @@ lol.tn=function(txt){return window.document.createTextNode(String(txt));};
 
 lol.version=
   {
-  maj:0,min:4,build:6,beta:true, /* u03b1=alpha,u03b2=beta */
+  maj:0,min:4,build:7,beta:true, /* u03b1=alpha,u03b2=beta */
   get:function()
     {
     var v=lol.version;
@@ -85,6 +85,7 @@ lol.init=function()
   lol.pr.r=lol.pr.h/lol.pr.w;
   lol.color.n=lol.config.color.n;
   lol.color.stop=lol.config.color.stop;
+  lol.p=lol.config.p;
   lol.r=lol.config.r;
   lol.cam=lol.config.cam;
   lol.cs=lol.config.cs;
@@ -119,7 +120,7 @@ lol.init=function()
   lol.mesh.format(mesh.corner,{x:-s,y: s,z: s},scale,{x:0,y:90,z:180});
   lol.mesh.format(mesh.corner,{x: s,y: s,z: s},scale,{x:0,y:180,z:180});
   */
-  lol.mesh.format(mesh.icosahedron,1,lol.p,{x:2,y:2,z:2},{x:32,y:0,z:0});
+  lol.mesh.format(mesh.icosahedron,1,null,{x:2,y:2,z:2},{x:32,y:0,z:0});
   lol.mesh.format(mesh.cube,0,{x:3.5,y:-0.5,z:-3.5},{x:0.5,y:0.5,z:0.5});
   lol.mesh.format(mesh.cube,0,{x:-3.5,y:-1,z:3.5},{x:0.25,y:1,z:0.25});
   //var obj=lol.mesh.load('mesh/duck.json');
@@ -889,18 +890,19 @@ lol.render=function()
   lm=lol.matrix.rotation(lol.lo);
   ls=lol.matrix.multiply(lol.light,lm);
   ld=lol.vector.o;
-  mtx=[lol.matrix.rotation(lol.vector.o),lol.matrix.rotation(lol.r)];
+  mtx=[lol.matrix.rotation(lol.r)];
   lol.data.vtx.forEach(function(v,i)
     {
     if(lol.data.grp[i]===0)
       {
-      tmp[i]=lol.matrix.multiply(v,mtx[0]);
+      tmp[i]=v;
       }
     else
       {
       //vec=lol.vector.sub(v,lol.p);
       //tmp[i]=lol.vector.add(lol.p,lol.matrix.multiply(vec,mtx[1]));
-      tmp[i]=lol.matrix.multiply(v,mtx[1]);
+      vec=lol.matrix.multiply(v,mtx[lol.data.grp[i]-1]);
+      tmp[i]=lol.vector.add(vec,lol.p);
       }
     });
   lol.data.tri.forEach(function(v,i){raw[i]=tmp[v];});
@@ -1001,6 +1003,51 @@ lol.render=function()
     /* axis origin */
     lol.color.set([248,248,248]);
     lol.plot.square(a);
+    }
+  if(lol.flag.get('horizon'))
+    {
+    i=0;
+    k=360;
+    l=32768;
+    lol.color.set(lol.color.bgd.map(function(v){return v-16;}));
+    a=lol.vector.transform(lol.cs,{x:0,y:lol.axis.y,z:l});
+    while(i<k)
+      {
+      i+=20;
+      vec={x:0,y:lol.axis.y,z:l};
+      var hm=lol.matrix.rotation({x:0,y:i,z:0});
+      b=lol.vector.transform(lol.cs,lol.matrix.multiply(vec,hm));
+      lol.plot.line(a,b);
+      a=b;
+      }
+    i=0;
+    k=360;
+    l=64;
+    lol.color.set(lol.color.bgd.map(function(v){return v-8;}));
+    a=lol.vector.transform(lol.cs,{x:0,y:lol.axis.y,z:l});
+    while(i<k)
+      {
+      i+=20;
+      vec={x:0,y:lol.axis.y,z:l};
+      var hm=lol.matrix.rotation({x:0,y:i,z:0});
+      b=lol.vector.transform(lol.cs,lol.matrix.multiply(vec,hm));
+      lol.plot.line(a,b);
+      a=b;
+      }
+    i=0;
+    k=360;
+    l=16;
+    lol.color.set(lol.color.bgd.map(function(v){return v+8;}));
+    a=lol.vector.transform(lol.cs,{x:0,y:lol.axis.y,z:l});
+    while(i<k)
+      {
+      i+=10;
+      vec={x:0,y:lol.axis.y,z:l};
+      var hm=lol.matrix.rotation({x:0,y:i,z:0});
+      b=lol.vector.transform(lol.cs,lol.matrix.multiply(vec,hm));
+      lol.plot.line(a,b);
+      a=b;
+      }
     }
   if(lol.flag.get('normal'))
     {
