@@ -9,7 +9,7 @@
 |################################### LOL 3D ###################################|
 `-----------------------------------------------------------------------------*/
 
-/*jslint white,this,debug,maxlen:80*/
+/*jslint white,this,maxlen:80*/
 /*global window,jslint*/
 
 Number.prototype.clamp=function(min,max)
@@ -43,7 +43,7 @@ lol.tn=function(txt){return window.document.createTextNode(String(txt));};
 
 lol.version=
   {
-  maj:0,min:4,build:7,beta:true, /* u03b1=alpha,u03b2=beta */
+  maj:0,min:4,build:8,beta:true, /* u03b1=alpha,u03b2=beta */
   get:function()
     {
     var v=lol.version;
@@ -53,7 +53,7 @@ lol.version=
 
 lol.init=function()
   {
-  var scale={},s=1.5,w=0.1,handler;
+  var scale={},handler;
   lol.config=lol.localstorage.get();
   if(lol.config.version!==lol.version.get())
     {
@@ -68,15 +68,15 @@ lol.init=function()
       flag:lol.flag.list,
       anim:false,
       console:true,
-      color:{n:7,stop:[0.2,0.4,0.7]},
-      zr:256,             /* focale */
+      color:{n:8,stop:[0.3,0.5,0.8]},
+      zr:320,             /* focale */
       pr:{w:3,h:3},       /* pixel ratio */
       p:{x:0,y:-2.5,z:0}, /* position vector */
       r:{x:0,y:0,z:0},    /* rotation vector */
-      cam:{x:0,y:0,z:-12},/* camera position vector */
-      cs:{x:0,y:0,z:0},   /* camera source vector */
-      co:{x:45,y:0,z:0},  /* camera orientation vector */
-      lo:{x:0,y:0,z:0}    /* light orientation vector */
+      cam:{x:0,y:0,z:-16},/* camera position vector */
+      co:{x:0,y:0,z:0},   /* camera origin vector */
+      cr:{x:45,y:0,z:0},  /* camera rotation vector */
+      lr:{x:0,y:0,z:0}    /* light rotation vector */
       };
     lol.localstorage.save();
     }
@@ -88,38 +88,9 @@ lol.init=function()
   lol.p=lol.config.p;
   lol.r=lol.config.r;
   lol.cam=lol.config.cam;
-  lol.cs=lol.config.cs;
   lol.co=lol.config.co;
-  lol.lo=lol.config.lo;
-  /*
-  scale={x:s-w,y:0,z:s-w};
-  lol.mesh.format(mesh.quad,{x:0,y:s+w,z:0},scale,{x:-90,y:0,z:0});
-  lol.mesh.format(mesh.quad,{x:0,y:-s-w,z:0},scale,{x:90,y:0,z:0});
-  scale={x:w,y:s-w,z:w};
-  lol.mesh.format(mesh.tube,{x:-s,y: 0,z:-s},scale);
-  lol.mesh.format(mesh.tube,{x: s,y: 0,z:-s},scale);
-  lol.mesh.format(mesh.tube,{x:-s,y: 0,z: s},scale);
-  lol.mesh.format(mesh.tube,{x: s,y: 0,z: s},scale);
-  scale={x:w,y:w,z:s-w};
-  lol.mesh.format(mesh.tube,{x:-s,y:-s,z: 0},scale,{x:90,y:0,z:0});
-  lol.mesh.format(mesh.tube,{x: s,y:-s,z: 0},scale,{x:90,y:0,z:0});
-  lol.mesh.format(mesh.tube,{x:-s,y: s,z: 0},scale,{x:90,y:0,z:0});
-  lol.mesh.format(mesh.tube,{x: s,y: s,z: 0},scale,{x:90,y:0,z:0});
-  scale={x:s-w,y:w,z:w};
-  lol.mesh.format(mesh.tube,{x: 0,y:-s,z:-s},scale,{x:0,y:0,z:90});
-  lol.mesh.format(mesh.tube,{x: 0,y: s,z:-s},scale,{x:0,y:0,z:90});
-  lol.mesh.format(mesh.tube,{x: 0,y:-s,z: s},scale,{x:0,y:0,z:90});
-  lol.mesh.format(mesh.tube,{x: 0,y: s,z: s},scale,{x:0,y:0,z:90});
-  scale={x:w,y:w,z:w};
-  lol.mesh.format(mesh.corner,{x:-s,y:-s,z:-s},scale,{x:0,y:0,z:-90});
-  lol.mesh.format(mesh.corner,{x: s,y:-s,z:-s},scale,{x:0,y:0,z:0});
-  lol.mesh.format(mesh.corner,{x: s,y: s,z:-s},scale,{x:0,y:0,z:90});
-  lol.mesh.format(mesh.corner,{x:-s,y: s,z:-s},scale,{x:0,y:0,z:180});
-  lol.mesh.format(mesh.corner,{x: s,y:-s,z: s},scale,{x:0,y:-90,z:0});
-  lol.mesh.format(mesh.corner,{x:-s,y:-s,z: s},scale,{x:0,y:180,z:0});
-  lol.mesh.format(mesh.corner,{x:-s,y: s,z: s},scale,{x:0,y:90,z:180});
-  lol.mesh.format(mesh.corner,{x: s,y: s,z: s},scale,{x:0,y:180,z:180});
-  */
+  lol.cr=lol.config.cr;
+  lol.lr=lol.config.lr;
   lol.mesh.format(mesh.icosahedron,1,null,{x:2,y:2,z:2},{x:32,y:0,z:0});
   lol.mesh.format(mesh.cube,0,{x:3.5,y:-0.5,z:-3.5},{x:0.5,y:0.5,z:0.5});
   lol.mesh.format(mesh.cube,0,{x:-3.5,y:-1,z:3.5},{x:0.25,y:1,z:0.25});
@@ -211,8 +182,8 @@ lol.viewport=function()
 lol.resize=function()
   {
   var w=window.innerWidth,h=window.innerHeight,el;
-  lol.w=(w+lol.pr.w-w%lol.pr.w)/lol.pr.w;lol.w+=lol.w%2;
-  lol.h=(h+lol.pr.h-h%lol.pr.h)/lol.pr.h;lol.h+=lol.h%2;
+  lol.w=(w+lol.pr.w-w%lol.pr.w)/lol.pr.w;lol.w-=lol.w%2;
+  lol.h=(h+lol.pr.h-h%lol.pr.h)/lol.pr.h;lol.h-=lol.h%2;
   lol.cvs.width=lol.w*lol.pr.w;
   lol.cvs.height=lol.h*lol.pr.h;
   lol.ctx.scale(lol.pr.w,lol.pr.h);
@@ -276,11 +247,11 @@ lol.scanline=
 
 lol.matrix=
   {
-  identity:function()
+  id:function()
     {
     return [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]];
     },
-  multiply:function(v,m)
+  mul:function(v,m)
     {
     return {
       x:v.x*m[0][0]+v.y*m[0][1]+v.z*m[0][2]+m[0][3],
@@ -288,7 +259,7 @@ lol.matrix=
       z:v.x*m[2][0]+v.y*m[2][1]+v.z*m[2][2]+m[2][3]
       };
     },
-  rotation:function(a)
+  rotate:function(a)
     {
     var m,sin1,cos1,sin2,cos2,sin3,cos3;
     sin1=Math.sin(a.y*Math.PI/180);
@@ -297,7 +268,7 @@ lol.matrix=
     cos2=Math.cos(a.x*Math.PI/180);
     sin3=Math.sin(a.z*Math.PI/180);
     cos3=Math.cos(a.z*Math.PI/180);
-    m=lol.matrix.identity();
+    m=lol.matrix.id();
     m[0][0]=cos1*cos3+sin1*sin2*sin3;
     m[0][1]=-cos1*sin3+cos3*sin1*sin2;
     m[0][2]=cos2*sin1;
@@ -326,7 +297,7 @@ lol.vector=
     {
     return {x:-a.x,y:-a.y,z:-a.z};
     },
-  mul:function(a,b) /* multiply (a*b) */
+  mul:function(a,b) /* mul (a*b) */
     {
     return {x:a.x*b.x,y:a.y*b.y,z:a.z*b.z};
     },
@@ -398,23 +369,23 @@ lol.vector=
     n=lol.vector.cross(a,b);
     return n;
     },
-  transform:function(cam,vec)
+  transform:function(vec)
     {
-    var mtx=lol.matrix.rotation(lol.co),z;
-    vec=lol.matrix.multiply(vec,mtx);
+    var mtx=lol.matrix.rotate(lol.cr),z;
+    vec=lol.matrix.mul(vec,mtx);
     vec=lol.vector.sub(lol.cam,vec);
-    z=(vec.z-cam.z)/lol.zr;
+    z=(vec.z-lol.co.z)/lol.zr;
     if(z>0){z=0;}
     return {
-      x:Math.round(lol.w/2+(vec.x-cam.x)*lol.pr.r/z),
-      y:Math.round(lol.h/2+(vec.y-cam.y)/z)};
+      x:Math.round(lol.w/2+(vec.x-lol.co.x)*lol.pr.r/z),
+      y:Math.round(lol.h/2+(vec.y-lol.co.y)/z)};
     }
   };
 
 lol.color=
   {
   n:0,
-  w:14,
+  w:13,
   h:12,
   pal:[],
   list:[
@@ -442,7 +413,7 @@ lol.color=
     el.style.position='absolute';
     el.style.left=lol.m+'px';
     el.style.top=lol.m+'px';
-    el.style.font='bold 8px/8px sans-serif';
+    el.style.font='bold 9px/9px sans-serif';
     el.style.letterSpacing='-1px';
     el.style.textAlign='right';
     el.style.cursor='default';
@@ -566,9 +537,10 @@ lol.plot=
     },
   line:function(a,b)
     {
-    var i=0,x,y,d1,d2,dx,dy,xi1,xi2,yi1,yi2,nbr,v1,v2,vi=false;
+    var i=0,x,y,d1,d2,dx,dy,xi1,xi2,yi1,yi2,nbr,v1,v2;
     if((a.x<0&&b.x<0)||(a.x>lol.w&&b.x>lol.w)){return false;}
     if((a.y<0&&b.y<0)||(a.y>lol.h&&b.y>lol.h)){return false;}
+    console.log(a.x+'*'+a.y+'->'+b.x+'*'+b.y);
     if(a.x<0)
       {
       v1={x:0,y:0};
@@ -655,10 +627,8 @@ lol.plot=
       }
     lol.ctx.closePath();
     lol.ctx.fill();
-    if(vi)
-      {
-      lol.plot.square(vi);
-      }
+    lol.plot.square(a);
+    lol.plot.square(b);
     },
   dot:function(p)
     {
@@ -884,13 +854,12 @@ lol.fill=
 
 lol.render=function()
   {
-  var i,k,l,n,test=true,vec,mtx,x,y,ls,ld,lm,a,b,c,d,max,
+  var i,k,l,m,n,test=true,vec,mtx,x,y,ls,ld,lm,a,b,c,d,max,
   tmp=[],raw=[],dat=[],fct=[],norm=[],cull=[],lgt=[],col=[];
-  lol.cs=lol.matrix.multiply(lol.vector.o,lol.matrix.rotation(lol.co));
-  lm=lol.matrix.rotation(lol.lo);
-  ls=lol.matrix.multiply(lol.light,lm);
-  ld=lol.vector.o;
-  mtx=[lol.matrix.rotation(lol.r)];
+  lol.co=lol.matrix.mul(lol.vector.o,lol.matrix.rotate(lol.cr));
+  lm=lol.matrix.rotate(lol.vector.neg(lol.lr));
+  ls=lol.matrix.mul(lol.light,lm);
+  mtx=[lol.matrix.rotate(lol.r)];
   lol.data.vtx.forEach(function(v,i)
     {
     if(lol.data.grp[i]===0)
@@ -900,8 +869,8 @@ lol.render=function()
     else
       {
       //vec=lol.vector.sub(v,lol.p);
-      //tmp[i]=lol.vector.add(lol.p,lol.matrix.multiply(vec,mtx[1]));
-      vec=lol.matrix.multiply(v,mtx[lol.data.grp[i]-1]);
+      //tmp[i]=lol.vector.add(lol.p,lol.matrix.mul(vec,mtx[1]));
+      vec=lol.matrix.mul(v,mtx[lol.data.grp[i]-1]);
       tmp[i]=lol.vector.add(vec,lol.p);
       }
     });
@@ -927,7 +896,7 @@ lol.render=function()
       }
     n-=1;
     }
-  raw.forEach(function(v,i){dat[i]=lol.vector.transform(lol.cs,v);});
+  raw.forEach(function(v,i){dat[i]=lol.vector.transform(v);});
   i=0;
   k=0;
   n=raw.length/3;
@@ -952,54 +921,57 @@ lol.render=function()
     l=1;
     k=10;
     lol.color.set(lol.color.bgd.map(function(v){return v+16;}));
-    vec={x:ld.x,y:lol.axis.y,z:ld.z};
+    vec=lol.vector.o; vec.y=lol.axis.y;
     i=0;
     while(i<=k)
       {
       x=k*l/2;
       y=-x+i*l;
-      a=lol.vector.transform(lol.cs,lol.vector.add(vec,{x:-x,y:0,z:y}));
-      b=lol.vector.transform(lol.cs,lol.vector.add(vec,{x:x,y:0,z:y}));
-      c=lol.vector.transform(lol.cs,lol.vector.add(vec,{x:y,y:0,z:-x}));
-      d=lol.vector.transform(lol.cs,lol.vector.add(vec,{x:y,y:0,z:x}));
+      a=lol.vector.transform(lol.vector.add(vec,{x:-x,y:0,z:y}));
+      b=lol.vector.transform(lol.vector.add(vec,{x:x,y:0,z:y}));
+      c=lol.vector.transform(lol.vector.add(vec,{x:y,y:0,z:-x}));
+      d=lol.vector.transform(lol.vector.add(vec,{x:y,y:0,z:x}));
       lol.plot.line(a,b);
       lol.plot.line(c,d);
       i+=1;
       }
-    a=lol.vector.transform(lol.cs,lol.axis);
+    a=lol.vector.transform(lol.axis);
     /* x axis */
     vec=lol.vector.add(lol.axis,{x:-2,y:0,z:0});
-    b=lol.vector.transform(lol.cs,vec);
+    b=lol.vector.transform(vec);
+    vec=lol.vector.add(lol.axis,{x:-1.75,y:0,z:-0.125});
+    c=lol.vector.transform(vec);
+    vec=lol.vector.add(lol.axis,{x:-1.75,y:0,z:0.125});
+    d=lol.vector.transform(vec);
     lol.color.set([248,0,0]);
     lol.plot.line(a,b);
-    vec=lol.vector.add(lol.axis,{x:-1.75,y:0,z:-0.125});
-    c=lol.vector.transform(lol.cs,vec);
     lol.plot.line(b,c);
-    vec=lol.vector.add(lol.axis,{x:-1.75,y:0,z:0.125});
-    c=lol.vector.transform(lol.cs,vec);
-    lol.plot.line(b,c);
+    lol.plot.line(b,d);
+    lol.plot.line(c,d);
     /* y axis */
     vec=lol.vector.add(lol.axis,{x:0,y:-2,z:0});
-    b=lol.vector.transform(lol.cs,vec);
+    b=lol.vector.transform(vec);
+    vec=lol.vector.add(lol.axis,{x:-0.125,y:-1.75,z:0});
+    c=lol.vector.transform(vec);
+    vec=lol.vector.add(lol.axis,{x:0.125,y:-1.75,z:0});
+    d=lol.vector.transform(vec);
     lol.color.set([0,128,248]);
     lol.plot.line(a,b);
-    vec=lol.vector.add(lol.axis,{x:-0.125,y:-1.75,z:0});
-    c=lol.vector.transform(lol.cs,vec);
     lol.plot.line(b,c);
-    vec=lol.vector.add(lol.axis,{x:0.125,y:-1.75,z:0});
-    c=lol.vector.transform(lol.cs,vec);
-    lol.plot.line(b,c);
+    lol.plot.line(b,d);
+    lol.plot.line(c,d);
     /* z axis */
     vec=lol.vector.add(lol.axis,{x:0,y:0,z:-2});
-    b=lol.vector.transform(lol.cs,vec);
+    b=lol.vector.transform(vec);
+    vec=lol.vector.add(lol.axis,{x:-0.125,y:0,z:-1.75});
+    c=lol.vector.transform(vec);
+    vec=lol.vector.add(lol.axis,{x:0.125,y:0,z:-1.75});
+    d=lol.vector.transform(vec);
     lol.color.set([0,248,0]);
     lol.plot.line(a,b);
-    vec=lol.vector.add(lol.axis,{x:-0.125,y:0,z:-1.75});
-    c=lol.vector.transform(lol.cs,vec);
     lol.plot.line(b,c);
-    vec=lol.vector.add(lol.axis,{x:0.125,y:0,z:-1.75});
-    c=lol.vector.transform(lol.cs,vec);
-    lol.plot.line(b,c);
+    lol.plot.line(b,d);
+    lol.plot.line(c,d);
     /* axis origin */
     lol.color.set([248,248,248]);
     lol.plot.square(a);
@@ -1010,13 +982,13 @@ lol.render=function()
     k=360;
     l=32768;
     lol.color.set(lol.color.bgd.map(function(v){return v-16;}));
-    a=lol.vector.transform(lol.cs,{x:0,y:lol.axis.y,z:l});
+    a=lol.vector.transform({x:0,y:lol.axis.y,z:l});
     while(i<k)
       {
       i+=20;
       vec={x:0,y:lol.axis.y,z:l};
-      var hm=lol.matrix.rotation({x:0,y:i,z:0});
-      b=lol.vector.transform(lol.cs,lol.matrix.multiply(vec,hm));
+      m=lol.matrix.rotate({x:0,y:i,z:0});
+      b=lol.vector.transform(lol.matrix.mul(vec,m));
       lol.plot.line(a,b);
       a=b;
       }
@@ -1024,13 +996,13 @@ lol.render=function()
     k=360;
     l=64;
     lol.color.set(lol.color.bgd.map(function(v){return v-8;}));
-    a=lol.vector.transform(lol.cs,{x:0,y:lol.axis.y,z:l});
+    a=lol.vector.transform({x:0,y:lol.axis.y,z:l});
     while(i<k)
       {
       i+=20;
       vec={x:0,y:lol.axis.y,z:l};
-      var hm=lol.matrix.rotation({x:0,y:i,z:0});
-      b=lol.vector.transform(lol.cs,lol.matrix.multiply(vec,hm));
+      m=lol.matrix.rotate({x:0,y:i,z:0});
+      b=lol.vector.transform(lol.matrix.mul(vec,m));
       lol.plot.line(a,b);
       a=b;
       }
@@ -1038,13 +1010,13 @@ lol.render=function()
     k=360;
     l=16;
     lol.color.set(lol.color.bgd.map(function(v){return v+8;}));
-    a=lol.vector.transform(lol.cs,{x:0,y:lol.axis.y,z:l});
+    a=lol.vector.transform({x:0,y:lol.axis.y,z:l});
     while(i<k)
       {
       i+=10;
       vec={x:0,y:lol.axis.y,z:l};
-      var hm=lol.matrix.rotation({x:0,y:i,z:0});
-      b=lol.vector.transform(lol.cs,lol.matrix.multiply(vec,hm));
+      m=lol.matrix.rotate({x:0,y:i,z:0});
+      b=lol.vector.transform(lol.matrix.mul(vec,m));
       lol.plot.line(a,b);
       a=b;
       }
@@ -1055,8 +1027,8 @@ lol.render=function()
       {
       if(cull[i]<0){return false;}
       vec=lol.vector.add(fct[i],lol.vector.mul(v,lol.norm));
-      a=lol.vector.transform(lol.cs,fct[i]);
-      b=lol.vector.transform(lol.cs,vec);
+      a=lol.vector.transform(fct[i]);
+      b=lol.vector.transform(vec);
       c=Math.round((-v.z+0.5)*128).clamp(0,255);
       lol.color.set([lol.color.bgd[0]+c,lol.color.bgd[1],lol.color.bgd[2]]);
       lol.plot.line(a,b);
@@ -1114,8 +1086,9 @@ lol.render=function()
     }
   if(lol.flag.get('axis'))
     {
+    vec=lol.vector.o; vec.y=lol.axis.y;
     lol.color.set([0,192,248]);
-    lol.plot.square(lol.vector.transform(lol.cs,ld));
+    lol.plot.square(lol.vector.transform(vec));
     }
   if(lol.flag.get('wireframe'))
     {
@@ -1137,10 +1110,12 @@ lol.render=function()
     {
     lol.color.set([248,248,248]);
     lol.ctx.beginPath();
-    lol.data.vtx.forEach(function(v,i)
+    i=0;
+    while(i<lol.data.vtx.length)
       {
-      lol.plot.pixel(lol.vector.transform(lol.cs,tmp[i]));
-      });
+      lol.plot.pixel(lol.vector.transform(tmp[i]));
+      i+=1;
+      }
     lol.ctx.closePath();
     lol.ctx.fill();
     }
@@ -1150,8 +1125,8 @@ lol.render=function()
       {
       if(cull[i]>=0){return false;}
       vec=lol.vector.add(fct[i],lol.vector.mul(v,lol.norm));
-      a=lol.vector.transform(lol.cs,fct[i]);
-      b=lol.vector.transform(lol.cs,vec);
+      a=lol.vector.transform(fct[i]);
+      b=lol.vector.transform(vec);
       c=Math.round((-v.z+0.5)*128).clamp(0,255);
       lol.color.set([lol.color.bgd[0]+c,lol.color.bgd[1],lol.color.bgd[2]]);
       lol.plot.line(a,b);
@@ -1169,16 +1144,27 @@ lol.render=function()
     }
   if(lol.flag.get('axis'))
     {
-    lm=lol.matrix.rotation(lol.lo);
-    ls=lol.matrix.multiply(lol.light,lm);
+    ld=lol.p;
+    ls=lol.matrix.mul(lol.light,lol.matrix.rotate(lol.lr));
     ls=lol.vector.mul(lol.vector.norm(ls),{x:4,y:4,z:4});
-    a=lol.vector.norm(lol.vector.add(ls,ld));
-    vec=lol.vector.sub(ls,lol.vector.mul(a,lol.norm));
-    a=lol.vector.transform(lol.cs,ls);
-    b=lol.vector.transform(lol.cs,vec);
-    c=Math.round((-lol.vector.norm(ls).z+1)*96);
-    lol.color.set([lol.color.bgd[0]+c,lol.color.bgd[1]+c,lol.color.bgd[2]]);
+    ls=lol.vector.add(ls,ld);
+    a=lol.vector.transform(ls);
+    vec=lol.matrix.mul({x:0,y:0,z:1.0},lol.matrix.rotate(lol.lr));
+    vec=lol.vector.add(vec,ls);
+    b=lol.vector.transform(vec);
+    vec=lol.matrix.mul({x:-0.125,y:0,z:0.875},lol.matrix.rotate(lol.lr));
+    vec=lol.vector.add(vec,ls);
+    c=lol.vector.transform(vec);
+    vec=lol.matrix.mul({x:0.125,y:0,z:0.875},lol.matrix.rotate(lol.lr));
+    vec=lol.vector.add(vec,ls);
+    d=lol.vector.transform(vec);
+    lol.color.set([224,144,0]);
     lol.plot.line(a,b);
+    lol.plot.line(b,c);
+    lol.plot.line(b,d);
+    lol.plot.line(c,d);
+    lol.color.set([248,224,0]);
+    lol.plot.square(lol.vector.transform(ld));
     lol.plot.square(a);
     }
   //console.log(lol.vector.ortho({x:0,y:0,z:2}));
@@ -1196,7 +1182,7 @@ lol.anim=
     lol.console.log('mesh ry',lol.util.sign(vec.y)+vec.y.toFixed(1)+'°');
     lol.console.log('mesh rz',lol.util.sign(vec.z)+vec.z.toFixed(1)+'°');
     lol.console.hr(5);
-    vec=lol.lo;
+    vec=lol.lr;
     lol.console.log('light rx',lol.util.sign(vec.x)+vec.x.toFixed(1)+'°');
     lol.console.log('light ry',lol.util.sign(vec.y)+vec.y.toFixed(1)+'°');
     lol.console.log('light rz',lol.util.sign(vec.z)+vec.z.toFixed(1)+'°');
@@ -1205,7 +1191,7 @@ lol.anim=
     lol.console.log('cam px',lol.util.sign(vec.x)+vec.x.toFixed(1));
     lol.console.log('cam py',lol.util.sign(vec.y)+vec.y.toFixed(1));
     lol.console.log('cam pz',lol.util.sign(vec.z)+vec.z.toFixed(1));
-    vec=lol.co;
+    vec=lol.cr;
     lol.console.log('cam rx',lol.util.sign(vec.x)+vec.x.toFixed(1)+'°');
     lol.console.log('cam ry',lol.util.sign(vec.y)+vec.y.toFixed(1)+'°');
     lol.console.log('cam rz',lol.util.sign(vec.z)+vec.z.toFixed(1)+'°');
@@ -1222,9 +1208,9 @@ lol.anim=
   rotate:function()
     {
     var a=(lol.util.time()-lol.timer)/16;
-    lol.r.x=(lol.co.x+a/2)%360;
-    lol.r.y=(lol.co.y+a)%360;
-    lol.r.z=(lol.co.z+a/2)%360;
+    lol.r.x=(lol.cr.x+a/2)%360;
+    lol.r.y=(lol.cr.y+a)%360;
+    lol.r.z=(lol.cr.z+a/2)%360;
     },
   start:function()
     {
@@ -1367,13 +1353,13 @@ lol.mouse=
         }
       if(lol.key.ctrl)
         {
-        lol.co.y=(lol.vec.y+y)%360;
-        lol.co.x=(lol.vec.x+x)%360;
+        lol.cr.y=(lol.vec.y+y)%360;
+        lol.cr.x=(lol.vec.x+x)%360;
         }
       if(lol.key.alt)
         {
-        lol.lo.y=(lol.vec.y+y)%360;
-        lol.lo.x=(lol.vec.x+x)%360;
+        lol.lr.y=(lol.vec.y+y)%360;
+        lol.lr.x=(lol.vec.x+x)%360;
         }
       if(!lol.config.anim){lol.anim.update();}
       }
@@ -1396,13 +1382,13 @@ lol.mouse=
       }
     if(lol.key.ctrl)
       {
-      lol.vec=lol.util.clone(lol.co);
-      lol.config.co=lol.co;
+      lol.vec=lol.util.clone(lol.cr);
+      lol.config.cr=lol.cr;
       }
     if(lol.key.alt)
       {
-      lol.vec=lol.util.clone(lol.lo);
-      lol.config.lo=lol.lo;
+      lol.vec=lol.util.clone(lol.lr);
+      lol.config.lr=lol.lr;
       }
     lol.mouse.click=true;
     lol.mouse.log(e);
@@ -1459,10 +1445,11 @@ lol.key=
       case 27:lol.console.swap();break; /* esc */
       case 32:lol.anim.pause();break; /* space */
       case 13:lol.flag.swap('scanline');break;  /* return */
-      case 37:lol.co.y=(lol.co.y-22.5)%360;lol.anim.update();break; /* left  */
-      case 39:lol.co.y=(lol.co.y+22.5)%360;lol.anim.update();break; /* right */
-      case 38:lol.co.x=(lol.co.x-22.5)%360;lol.anim.update();break; /* up    */
-      case 40:lol.co.x=(lol.co.x+22.5)%360;lol.anim.update();break; /* down  */
+      case 37:lol.cr.y=(lol.cr.y-22.5)%360;lol.anim.update();break; /* left  */
+      case 39:lol.cr.y=(lol.cr.y+22.5)%360;lol.anim.update();break; /* right */
+      case 38:lol.cr.x=(lol.cr.x-22.5)%360;lol.anim.update();break; /* up    */
+      case 40:lol.cr.x=(lol.cr.x+22.5)%360;lol.anim.update();break; /* down  */
+      case 72:lol.flag.swap('horizon');lol.anim.update();break;     /* h */
       case 65:lol.flag.swap('axis');lol.anim.update();break;        /* a */
       case 86:lol.flag.swap('vertex');lol.anim.update();break;      /* v */
       case 70:lol.flag.swap('face'); lol.anim.update();break;       /* f */
@@ -1501,7 +1488,7 @@ lol.mesh=
     s=s||{x:1,y:1,z:1};
     o=o||{x:0,y:0,z:0};
     var i=0,k,n=0,vtx=[],tri=[],grp=[],mtx;
-    mtx=lol.matrix.rotation(lol.vector.add(lol.vector.o,o));
+    mtx=lol.matrix.rotate(lol.vector.add(lol.vector.o,o));
     while(i<mesh.vtx.length/3)
       {
       k=i*3;
@@ -1512,9 +1499,9 @@ lol.mesh=
     mesh.tri.forEach(function(v,i){tri[i]=v+n;});
     vtx.forEach(function(v,i,a)
       {
-      v=lol.matrix.multiply(v,mtx); /* orientation */
-      v=lol.vector.mul(v,s);        /* scale */
-      v=lol.vector.add(v,p);        /* position */
+      v=lol.matrix.mul(v,mtx); /* orientation */
+      v=lol.vector.mul(v,s);   /* scale */
+      v=lol.vector.add(v,p);   /* position */
       a[i]=v;
       grp[i]=g;
       });
@@ -1529,8 +1516,8 @@ lol.flag=
   {
   list:
     {
-    axis:true,
     horizon:true,
+    axis:true,
     vertex:false,
     face:true,
     wireframe:false,
