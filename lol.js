@@ -32,7 +32,7 @@ lol.cvs=false; /* canvas */
 lol.ctx=false; /* 2d context */
 lol.data={vtx:[],tri:[],col:[],grp:[]};
 lol.axis={x:-2,y:0,z:-2};
-lol.light={x:0,y:0,z:-1024};
+lol.light={x:0,y:0,z:1024};
 lol.norm={x:0.75,y:0.75,z:0.75};
 lol.vec={x:0,y:0,z:0};
 lol.m=4;       /* margin */
@@ -43,7 +43,7 @@ lol.tn=function(txt){return window.document.createTextNode(String(txt));};
 
 lol.version=
   {
-  maj:0,min:4,build:10,beta:true, /* u03b1=alpha,u03b2=beta */
+  maj:0,min:4,build:11,beta:true, /* u03b1=alpha,u03b2=beta */
   get:function()
     {
     var v=lol.version;
@@ -366,10 +366,13 @@ lol.vector=
       {
       vec=a;
       }
-    c=lol.color.get();
-    lol.color.set([0,248,0]);
-    lol.plot.square(lol.vector.transform(vec));
-    lol.color.set(c);
+    if(lol.flag.get('vertex'))
+      {
+      c=lol.color.get();
+      lol.color.set([0,248,0]);
+      lol.plot.dot(lol.vector.transform(vec));
+      lol.color.set(c);
+      }
     return vec;
     },
   normal:function(v1,v2,v3)
@@ -726,7 +729,7 @@ lol.fill=
           y+=1;
           }
         break;
-      case 1: case 3:
+      case 1: case 5:
         while(y<=v2.y)
           {
           if(x1<x2){a=x1;b=x2;}else{a=x2;b=x1;}
@@ -738,11 +741,7 @@ lol.fill=
             if(i===0)
               {
               lol.color.set(lol.color.pal[p][c+((n===1)?1:-1)]);
-              lol.ctx.beginPath();
-              x=a;
-              while(x<b){if((x+i)%2===0){lol.plot.pixel({x:x,y:y});}x+=1;}
-              lol.ctx.closePath();
-              lol.ctx.fill();
+              lol.ctx.fillRect(a,y,b-a,1);
               lol.color.set(lol.color.pal[p][c]);
               lol.ctx.beginPath();
               x=a;
@@ -761,7 +760,47 @@ lol.fill=
           y+=1;
           }
         break;
-      case 2:
+      case 2: case 4:
+        while(y<=v2.y)
+          {
+          if(x1<x2){a=x1;b=x2;}else{a=x2;b=x1;}
+          a=Math.round(a).clamp(0,lol.w);
+          b=Math.round(b).clamp(0,lol.w)+1;
+          if(y>-1&&y<lol.h)
+            {
+            i=y%2;
+            if(i===0)
+              {
+              lol.color.set(lol.color.pal[p][c+((n===2)?1:-1)]);
+              lol.ctx.fillRect(a,y,b-a,1);
+              lol.color.set(lol.color.pal[p][c]);
+              lol.ctx.beginPath();
+              x=a;
+              while(x<b){if((x+i)%2===1){lol.plot.pixel({x:x,y:y});}x+=1;}
+              lol.ctx.closePath();
+              lol.ctx.fill();
+              }
+            else
+              {
+              lol.color.set(lol.color.pal[p][c]);
+              lol.ctx.fillRect(a,y,b-a,1);
+              if((y+1)%4===0)
+                {
+                lol.color.set(lol.color.pal[p][c+((n===2)?1:-1)]);
+                lol.ctx.beginPath();
+                x=a;
+                while(x<b){if((x+i)%4===0){lol.plot.pixel({x:x,y:y});}x+=1;}
+                lol.ctx.closePath();
+                lol.ctx.fill();
+                }
+              }
+            }
+          x1+=xi1;
+          x2+=xi2;
+          y+=1;
+          }
+        break;
+      case 3:
         while(y<=v2.y)
           {
           if(x1<x2){a=x1;b=x2;}else{a=x2;b=x1;}
@@ -771,11 +810,7 @@ lol.fill=
             {
             i=y%2;
             lol.color.set(lol.color.pal[p][c-1]);
-            lol.ctx.beginPath();
-            x=a;
-            while(x<b){if((x+i)%2===0){lol.plot.pixel({x:x,y:y});}x+=1;}
-            lol.ctx.closePath();
-            lol.ctx.fill();
+            lol.ctx.fillRect(a,y,b-a,1);
             lol.color.set(lol.color.pal[p][c]);
             lol.ctx.beginPath();
             x=a;
@@ -817,7 +852,7 @@ lol.fill=
           y-=1;
           }
         break;
-      case 1: case 3:
+      case 1: case 5:
         while(y>v1.y)
           {
           x1-=xi1;
@@ -831,11 +866,7 @@ lol.fill=
             if(i===0)
               {
               lol.color.set(lol.color.pal[p][c+((n===1)?1:-1)]);
-              lol.ctx.beginPath();
-              x=a;
-              while(x<b){if((x+i)%2===0){lol.plot.pixel({x:x,y:y});}x+=1;}
-              lol.ctx.closePath();
-              lol.ctx.fill();
+              lol.ctx.fillRect(a,y,b-a,1);
               lol.color.set(lol.color.pal[p][c]);
               lol.ctx.beginPath();
               x=a;
@@ -852,7 +883,47 @@ lol.fill=
           y-=1;
           }
         break;
-      case 2:
+      case 2: case 4:
+        while(y>v1.y)
+          {
+          x1-=xi1;
+          x2-=xi2;
+          if(x1<x2){a=x1;b=x2;}else{a=x2;b=x1;}
+          a=Math.round(a).clamp(0,lol.w);
+          b=Math.round(b).clamp(0,lol.w)+1;
+          if(y>-1&&y<lol.h)
+            {
+            i=y%2;
+            if(i===0)
+              {
+              lol.color.set(lol.color.pal[p][c+((n===2)?1:-1)]);
+              lol.ctx.fillRect(a,y,b-a,1);
+              lol.color.set(lol.color.pal[p][c]);
+              lol.ctx.beginPath();
+              x=a;
+              while(x<b){if((x+i)%2===1){lol.plot.pixel({x:x,y:y});}x+=1;}
+              lol.ctx.closePath();
+              lol.ctx.fill();
+              }
+            else
+              {
+              lol.color.set(lol.color.pal[p][c]);
+              lol.ctx.fillRect(a,y,b-a,1);
+              if((y+1)%4===0)
+                {
+                lol.color.set(lol.color.pal[p][c+((n===2)?1:-1)]);
+                lol.ctx.beginPath();
+                x=a;
+                while(x<b){if((x+i)%4===0){lol.plot.pixel({x:x,y:y});}x+=1;}
+                lol.ctx.closePath();
+                lol.ctx.fill();
+                }
+              }
+            }
+          y-=1;
+          }
+        break;
+      case 3:
         while(y>v1.y)
           {
           x1-=xi1;
@@ -864,11 +935,7 @@ lol.fill=
             {
             i=y%2;
             lol.color.set(lol.color.pal[p][c-1]);
-            lol.ctx.beginPath();
-            x=a;
-            while(x<b){if((x+i)%2===0){lol.plot.pixel({x:x,y:y});}x+=1;}
-            lol.ctx.closePath();
-            lol.ctx.fill();
+            lol.ctx.fillRect(a,y,b-a,1);
             lol.color.set(lol.color.pal[p][c]);
             lol.ctx.beginPath();
             x=a;
@@ -889,7 +956,7 @@ lol.render=function()
   tmp=[],raw=[],dat=[],fct=[],norm=[],cull=[],lgt=[],col=[];
   lol.co=lol.matrix.mul(lol.vector.o,lol.matrix.rotate(lol.cr));
   lm=lol.matrix.rotate(lol.vector.neg(lol.lr));
-  ls=lol.matrix.mul(lol.light,lm);
+  ls=lol.vector.project(lol.matrix.mul(lol.light,lm));
   mtx=[lol.matrix.rotate(lol.r)];
   lol.data.vtx.forEach(function(v,i)
     {
@@ -1106,7 +1173,7 @@ lol.render=function()
   if(lol.flag.get('face'))
     {
     i=0;
-    max=(lol.color.n-1)*4;
+    max=(lol.color.n-1)*6;
     while(i<n)
       {
       if(cull[i]<0)
@@ -1117,12 +1184,12 @@ lol.render=function()
           }
         else
           {
-          c=Math.round(lol.color.n*lol.color.stop[1])*4;
+          c=Math.round(lol.color.n*lol.color.stop[1])*6;
           }
         k=i*3;
         d=0;
-        if(lol.flag.get('dither')){d=c%4;}
-        lol.fill.triangle(dat[k],dat[k+1],dat[k+2],col[i],Math.round(c/4),d);
+        if(lol.flag.get('dither')){d=c%6;}
+        lol.fill.triangle(dat[k],dat[k+1],dat[k+2],col[i],Math.round(c/6),d);
         }
       i+=1;
       }
@@ -1156,7 +1223,7 @@ lol.render=function()
     i=0;
     while(i<lol.data.vtx.length)
       {
-      lol.plot.pixel(lol.vector.transform(tmp[i]));
+      lol.plot.pixel(lol.vector.transform(lol.vector.project(tmp[i])));
       i+=1;
       }
     lol.ctx.closePath();
@@ -1188,7 +1255,7 @@ lol.render=function()
     {
     ld=lol.p;
     ls=lol.matrix.mul(lol.light,lol.matrix.rotate(lol.lr));
-    ls=lol.vector.mul(lol.vector.norm(ls),{x:4,y:4,z:4});
+    ls=lol.vector.mul(lol.vector.norm(ls),{x:-4,y:-4,z:-4});
     ls=lol.vector.add(ls,ld);
     a=lol.vector.transform(lol.vector.project(ls));
     vec=lol.matrix.mul({x:0,y:0,z:1.0},lol.matrix.rotate(lol.lr));
@@ -1560,7 +1627,7 @@ lol.flag=
     {
     horizon:true,
     axis:true,
-    vertex:false,
+    vertex:true,
     face:true,
     wireframe:false,
     normal:false,
