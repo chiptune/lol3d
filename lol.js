@@ -32,7 +32,7 @@ lol.cvs=false; /* canvas */
 lol.ctx=false; /* 2d context */
 lol.data={vtx:[],tri:[],col:[],grp:[]};
 lol.axis={x:-2,y:0,z:-2};
-lol.light={x:0,y:0,z:1024};
+lol.light={x:0,y:0,z:-1024};
 lol.norm={x:0.75,y:0.75,z:0.75};
 lol.vec={x:0,y:0,z:0};
 lol.m=4;       /* margin */
@@ -43,7 +43,7 @@ lol.tn=function(txt){return window.document.createTextNode(String(txt));};
 
 lol.version=
   {
-  maj:0,min:4,build:15,beta:true, /* u03b1=alpha,u03b2=beta */
+  maj:0,min:4,build:17,beta:true, /* u03b1=alpha,u03b2=beta */
   get:function()
     {
     var v=lol.version;
@@ -1020,11 +1020,11 @@ lol.fill=
 
 lol.render=function()
   {
-  var i,k,l,m,n,test=true,vec,mtx,x,y,ls,ld,lm,a,b,c,d,v,max,
+  var i,k,l,m,n,test=true,vec,mtx,x,y,ls,ld,a,b,c,d,v,max,
   tmp=[],raw=[],dat=[],fct=[],norm=[],cull=[],lgt=[],col=[];
   lol.co=lol.matrix.mul(lol.vector.o,lol.matrix.rotate(lol.cr));
-  lm=lol.matrix.rotate(lol.lr);
-  ls=lol.vector.project(lol.matrix.mul(lol.light,lm));
+  mtx=lol.matrix.rotate(lol.vector.sub(lol.lr,lol.cr));
+  ls=lol.vector.norm(lol.matrix.mul(lol.light,mtx));
   mtx=[lol.matrix.rotate(lol.r)];
   lol.data.vtx.forEach(function(v,i)
     {
@@ -1075,23 +1075,33 @@ lol.render=function()
     dat[i+2]=lol.vector.transform(c);
     i+=3;
     }*/
+  n=raw.length/3;
   i=0;
   k=0;
-  n=raw.length/3;
   while(i<n)
     {
-    fct[i]=
-      {
-      x:(raw[k+0].x+raw[k+1].x+raw[k+2].x)/3,
-      y:(raw[k+0].y+raw[k+1].y+raw[k+2].y)/3,
-      z:(raw[k+0].z+raw[k+1].z+raw[k+2].z)/3
-      };
     cull[i]=lol.vector.norm(lol.vector.normal2d(dat[k],dat[k+1],dat[k+2])).z;
     norm[i]=lol.vector.norm(lol.vector.normal(raw[k],raw[k+1],raw[k+2]));
-    lgt[i]=lol.vector.dot(norm[i],lol.vector.norm(lol.vector.sub(ls,fct[i])));
-    lgt[i]=-lgt[i]/2;
+    lgt[i]=-lol.vector.dot(norm[i],ls)/2;
     i+=1;
     k+=3;
+    }
+  if(lol.flag.get('normal'))
+    {
+    n=raw.length/3;
+    i=0;
+    k=0;
+    while(i<n)
+      {
+      fct[i]=
+        {
+        x:(raw[k+0].x+raw[k+1].x+raw[k+2].x)/3,
+        y:(raw[k+0].y+raw[k+1].y+raw[k+2].y)/3,
+        z:(raw[k+0].z+raw[k+1].z+raw[k+2].z)/3
+        };
+      i+=1;
+      k+=3;
+      }
     }
   lol.ctx.clearRect(0,0,lol.w,lol.h); /* clear viewport */
   if(lol.flag.get('horizon'))
@@ -1103,11 +1113,11 @@ lol.render=function()
     a=lol.vector.project({x:0,y:lol.axis.y,z:l});
     b=lol.vector.project({x:0,y:lol.axis.y,z:-l});
     if(a.z!==b.z){v=lol.vector.inter3d(a,b);if(a.z>b.z){a=v;}else{b=v;}}
-    lol.plot.line(lol.vector.transform(a),lol.vector.transform(b));
+    //lol.plot.line(lol.vector.transform(a),lol.vector.transform(b));
     a=lol.vector.project({x:-l,y:lol.axis.y,z:0});
     b=lol.vector.project({x:l,y:lol.axis.y,z:0});
     if(a.z!==b.z){v=lol.vector.inter3d(a,b);if(a.z>b.z){a=v;}else{b=v;}}
-    lol.plot.line(lol.vector.transform(a),lol.vector.transform(b));
+    //lol.plot.line(lol.vector.transform(a),lol.vector.transform(b));
     lol.color.set(lol.color.bgd.map(function(v){return v+8;}));
     lol.plot.circle({x:0,y:lol.axis.y,z:0},10,4);
     while(i<k)
@@ -1276,20 +1286,21 @@ lol.render=function()
     lol.plot.arrow(2,0.25,lol.axis,{x:0,y:180,z:0});
     lol.color.set([248,248,248]);
     lol.plot.square(lol.vector.transform(lol.vector.project(lol.axis)));
-    ld=lol.p;
-    ls=lol.matrix.mul(lol.light,lol.matrix.rotate(lol.lr));
-    ls=lol.vector.mul(lol.vector.norm(ls),{x:-4,y:-4,z:-4});
-    ls=lol.vector.add(ls,ld);
-    a=lol.vector.project(ls);
-    vec=lol.matrix.mul({x:0,y:0,z:1.0},lol.matrix.rotate(lol.lr));
-    b=lol.vector.project(lol.vector.add(vec,ls));
-    vec=lol.matrix.mul({x:-0.125,y:0,z:0.875},lol.matrix.rotate(lol.lr));
-    c=lol.vector.project(lol.vector.add(vec,ls));
-    vec=lol.matrix.mul({x:0.125,y:0,z:0.875},lol.matrix.rotate(lol.lr));
-    d=lol.vector.project(lol.vector.add(vec,ls));
     }
   if(lol.flag.get('axis')&&lol.flag.get('light'))
     {
+    mtx=lol.matrix.rotate(lol.vector.neg(lol.lr));
+    ld=lol.p;
+    ls=lol.matrix.mul(lol.light,mtx);
+    ls=lol.vector.mul(lol.vector.norm(ls),{x:4,y:4,z:4});
+    ls=lol.vector.add(ls,ld);
+    a=lol.vector.project(ls);
+    vec=lol.matrix.mul({x:0,y:0,z:1.0},mtx);
+    b=lol.vector.project(lol.vector.add(vec,ls));
+    vec=lol.matrix.mul({x:-0.125,y:0,z:0.875},mtx);
+    c=lol.vector.project(lol.vector.add(vec,ls));
+    vec=lol.matrix.mul({x:0.125,y:0,z:0.875},mtx);
+    d=lol.vector.project(lol.vector.add(vec,ls));
     lol.color.set([224,144,0]);
     if(a.z!==b.z){v=lol.vector.inter3d(a,b);if(a.z>b.z){a=v;}else{b=v;}}
     lol.plot.line(lol.vector.transform(a),lol.vector.transform(b));
@@ -1503,8 +1514,8 @@ lol.mouse=
         }
       if(lol.key.alt)
         {
-        lol.lr.y=(lol.vec.y+y)%360;
-        lol.lr.x=(lol.vec.x+x)%360;
+        lol.lr.y=(lol.vec.y-y)%360;
+        lol.lr.x=(lol.vec.x-x)%360;
         }
       if(!lol.config.anim){lol.anim.update();}
       }
