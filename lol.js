@@ -46,7 +46,7 @@ lol.tn=function(txt){return window.document.createTextNode(String(txt));};
 
 lol.version=
   {
-  maj:0,min:4,build:21,beta:true, /* u03b1=alpha,u03b2=beta */
+  maj:0,min:4,build:22,beta:true, /* u03b1=alpha,u03b2=beta */
   get:function()
     {
     var v=lol.version;
@@ -73,14 +73,14 @@ lol.init=function()
       console:true,
       color:{n:8,stop:[0.25,0.5,0.75]},
       pr:{w:2,h:2},       /* pixel ratio */
-      zr:256,             /* focale */
+      zr:192,             /* focale */
       np:0,               /* nearplane (from camera) */
       p:{x:0,y:-2.5,z:0}, /* position vector */
       r:{x:0,y:0,z:0},    /* rotation vector */
       cam:{x:0,y:0,z:-16},/* camera position vector */
       co:{x:0,y:0,z:0},   /* camera origin vector */
       cr:{x:22.5,y:0,z:0},/* camera rotation vector */
-      lr:{x:45,y:45,z:0}  /* light rotation vector */
+      lr:{x:22.5,y:45,z:0}/* light rotation vector */
       };
     lol.localstorage.save();
     }
@@ -134,7 +134,7 @@ lol.init=function()
   mesh.mountain.tri.push(0);
   mesh.mountain.tri.push(i);
   mesh.mountain.tri.push(i+1);
-  /* stars */
+  /* star */
   i=0;
   n=256;
   while(i<n)
@@ -144,28 +144,28 @@ lol.init=function()
     lol.star.push(lol.matrix.mul({x:0,y:0,z:lol.hzn.l},mtx));
     i+=1;
     }
+  /* sand */
   i=0;
   n=256;
   while(i<n)
     {
     a=360/n*i*Math.PI/180;
-    r=Math.random()*256;
+    r=2+Math.random()*510;
     lol.sand.push({x:r*Math.sin(a),y:lol.axis.y,z:r*Math.cos(a)});
     i+=1;
     }
-/*i=0;
-  n=128;
-  lol.hzn.n+=n*2;
+  lol.mesh.format(mesh.mountain,0);
+  i=0;
+  n=16;
   while(i<n)
     {
-    r=0.5+Math.random()*60;
-    a=360/n*i;
-    x=Math.round(r*Math.cos(a*Math.PI/180))+0.5;
-    z=Math.round(r*Math.sin(a*Math.PI/180))+0.5;
-    lol.mesh.format(mesh.quad,0,{x:x,y:0,z:z},{x:0.5,y:1,z:0.5});
+    r=(i>0)?256+Math.random()*(2048-256):160;
+    a=360/n*i+90;
+    x=Math.round(r*Math.cos(a*Math.PI/180));
+    z=Math.round(r*Math.sin(a*Math.PI/180));
+    lol.mesh.format(mesh.pyramid,1,{x:x,y:-24,z:z},{x:64,y:48,z:64});
     i+=1;
-    }*/
-  lol.mesh.format(mesh.mountain,0);
+    }
   lol.mesh.format(mesh.cube,1,{x:3.5,y:-0.5,z:-3.5});
   lol.mesh.format(mesh.cube,1,{x:-3.5,y:-1,z:3.5},{x:0.5,y:2,z:0.5});
   lol.mesh.format(mesh.pyramid,1,{x:-3.5,y:-0.5,z:-3.5});
@@ -461,9 +461,9 @@ lol.color=
     [160,144,96],
     [96,128,96],
     [96,128,160],
-    [112,112,80]
+    [104,104,80]
     ],
-  bgd:[72,64,40],
+  bgd:[72,64,48],
   format:function(col)
     {
     col=(typeof col==='object')?col:[0,0,0];
@@ -1042,12 +1042,27 @@ lol.fill=
         }
       y-=1;
       }
+    },
+  disc:function(p,r)
+    {
+    var i=0,n=r*2,x,y,l,py=0;
+    lol.ctx.beginPath();
+    while(i<180)
+      {
+      x=Math.round(r*Math.sin(i*Math.PI/180));
+      y=p.y+Math.round(r*Math.cos(i*Math.PI/180));
+      if(y!==py&&y>0&&y<lol.h){lol.ctx.rect(p.x+x,y,-x*2,1+(py-y));}
+      py=y;
+      i+=1;
+      }
+    lol.ctx.closePath();
+    lol.ctx.fill();
     }
   };
 
 lol.render=function()
   {
-  var i,k,l,n,test=true,vec,mtx,x,y,ls,ld,a,b,c,d,e,v,max,
+  var i,k,l,n,test=true,vec,mtx,x,y,ls,a,b,c,d,e,v,max,
   tmp=[],raw=[],dat=[],fct=[],norm=[],cull=[],lgt=[],col=[];
   lol.co=lol.matrix.mul(lol.vector.o,lol.matrix.rotate(lol.cr));
   mtx=lol.matrix.rotate(lol.vector.sub(lol.lr,lol.cr));
@@ -1135,9 +1150,9 @@ lol.render=function()
       k+=3;
       }
     }
-  lol.ctx.fillStyle='rgba('+lol.color.bgd[0]+','+lol.color.bgd[1]+','+lol.color.bgd[2]+',0.5)';
-  lol.ctx.fillRect(0,0,lol.w,lol.h);
-  //lol.ctx.clearRect(0,0,lol.w,lol.h); /* clear viewport */
+  lol.ctx.clearRect(0,0,lol.w,lol.h); /* clear viewport */
+  //lol.ctx.fillStyle='rgba('+lol.color.bgd.join(',')+','+',0.5)';
+  //lol.ctx.fillRect(0,0,lol.w,lol.h);
   if(lol.flag.get('star'))
     {
     v=lol.star.length/8;
@@ -1157,6 +1172,16 @@ lol.render=function()
       lol.ctx.fill();
       i+=1;
       }
+    }
+  if(lol.flag.get('light'))
+    {
+    mtx=lol.matrix.rotate(lol.vector.neg(lol.lr));
+    ls=lol.vector.norm(lol.matrix.mul(lol.light,mtx));
+    vec=lol.vector.mul(ls,{x:lol.hzn.l,y:lol.hzn.l,z:lol.hzn.l});
+    lol.color.set(lol.color.bgd.map(function(v){return v+16;}));
+    lol.fill.disc(lol.vector.transform(lol.vector.project(vec)),18);
+    lol.color.set(lol.color.bgd.map(function(v){return v+128;}));
+    lol.fill.disc(lol.vector.transform(lol.vector.project(vec)),13);
     }
   if(lol.flag.get('face'))
     {
@@ -1181,13 +1206,13 @@ lol.render=function()
       vec=lol.vector.project(v);
       var p=lol.vector.transform(vec);
       lol.plot.pixel(p);
-      if(vec.z>-32)
+      if(vec.z>-64)
         {
         lol.plot.pixel({x:p.x+1,y:p.y});
         lol.plot.pixel({x:p.x,y:p.y-1});
         lol.plot.pixel({x:p.x+1,y:p.y-1});
         }
-      else if(vec.z>-64)
+      else if(vec.z>-128)
         {
         lol.plot.pixel({x:p.x+1,y:p.y});
         }
@@ -1197,13 +1222,17 @@ lol.render=function()
     }
   if(lol.flag.get('horizon'))
     {
-    lol.color.set(lol.color.bgd.map(function(v){return v+8;}));
-    lol.plot.circle({x:0,y:lol.axis.y,z:0},lol.hzn.l,4);
+    //lol.color.set(lol.color.bgd.map(function(v){return v+8;}));
+    //lol.plot.circle({x:0,y:lol.axis.y,z:0},lol.hzn.l,4);
     lol.color.set(lol.color.bgd.map(function(v){return v-8;}));
+    //lol.plot.circle({x:0,y:lol.axis.y,z:0},1024,16);
+    lol.plot.circle({x:0,y:lol.axis.y,z:0},512,16);
+    lol.plot.circle({x:0,y:lol.axis.y,z:0},256,16);
+    lol.plot.circle({x:0,y:lol.axis.y,z:0},128,16);
     lol.plot.circle({x:0,y:lol.axis.y,z:0},64,16);
+    lol.plot.circle({x:0,y:lol.axis.y,z:0},32,16);
     lol.color.set(lol.color.bgd.map(function(v){return v-16;}));
     lol.plot.circle({x:0,y:lol.axis.y,z:0},16,24);
-    lol.plot.circle({x:0,y:lol.axis.y,z:0},7.075,4,45);
     }
   if(lol.flag.get('axis'))
     {
@@ -1218,14 +1247,15 @@ lol.render=function()
     lol.plot.line(lol.vector.transform(a),lol.vector.transform(b));
     /* circle */
     lol.color.set(lol.color.bgd.map(function(v){return v+8;}));
+    //lol.plot.circle({x:0,y:lol.axis.y,z:0},7.075,4,45);
     lol.plot.circle({x:0,y:lol.axis.y,z:0},10,4);
     /* grid */
     l=1;
     k=10;
     lol.color.set(lol.color.bgd.map(function(v){return v+16;}));
     vec=lol.vector.o;vec.y=lol.axis.y;
-    i=1;
-    while(i<k)
+    i=0;
+    while(i<=k)
       {
       x=k*l/2;
       y=-x+i*l;
@@ -1379,18 +1409,14 @@ lol.render=function()
     }
   if(lol.flag.get('axis')&&lol.flag.get('light'))
     {
-    mtx=lol.matrix.rotate(lol.vector.neg(lol.lr));
-    ld=lol.p;
-    ls=lol.matrix.mul(lol.light,mtx);
-    ls=lol.vector.mul(lol.vector.norm(ls),{x:4,y:4,z:4});
-    ls=lol.vector.add(ls,ld);
-    a=lol.vector.project(ls);
-    vec=lol.matrix.mul({x:0,y:0,z:1.0},mtx);
-    b=lol.vector.project(lol.vector.add(vec,ls));
-    vec=lol.matrix.mul({x:-0.125,y:0,z:0.875},mtx);
-    c=lol.vector.project(lol.vector.add(vec,ls));
-    vec=lol.matrix.mul({x:0.125,y:0,z:0.875},mtx);
-    d=lol.vector.project(lol.vector.add(vec,ls));
+    vec=lol.vector.add(lol.vector.mul(ls,{x:4,y:4,z:4}),lol.p);
+    a=lol.vector.project(vec);
+    v=lol.matrix.mul({x:0,y:0,z:1},mtx);
+    b=lol.vector.project(lol.vector.add(v,vec));
+    v=lol.matrix.mul({x:-0.125,y:0,z:0.875},mtx);
+    c=lol.vector.project(lol.vector.add(v,vec));
+    v=lol.matrix.mul({x:0.125,y:0,z:0.875},mtx);
+    d=lol.vector.project(lol.vector.add(v,vec));
     lol.color.set([224,144,0]);
     if(a.z!==b.z){v=lol.vector.inter3d(a,b);if(a.z>b.z){a=v;}else{b=v;}}
     lol.plot.line(lol.vector.transform(a),lol.vector.transform(b));
@@ -1401,8 +1427,8 @@ lol.render=function()
     if(c.z!==d.z){v=lol.vector.inter3d(c,d);if(c.z>d.z){c=v;}else{d=v;}}
     lol.plot.line(lol.vector.transform(c),lol.vector.transform(d));
     lol.color.set([248,224,0]);
-    lol.plot.square(lol.vector.transform(lol.vector.project(ld)));
-    lol.plot.square(lol.vector.transform(lol.vector.project(ls)));
+    lol.plot.square(lol.vector.transform(lol.vector.project(lol.p)));
+    lol.plot.square(lol.vector.transform(lol.vector.project(vec)));
     }
   //console.log(lol.vector.ortho({x:0,y:0,z:2}));
   };
@@ -1772,7 +1798,7 @@ lol.flag=
     wireframe:false,
     normal:false,
     light:true,
-    dither:true,
+    dither:false,
     scanline:false
     },
   set:function(name,value)
