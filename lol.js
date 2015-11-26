@@ -30,7 +30,7 @@ lol.timer=0;
 lol.rid=false; /* frame request id */
 lol.cvs=false; /* canvas */
 lol.ctx=false; /* 2d context */
-lol.data={vtx:[],tri:[],col:[],grp:[]};
+lol.data={vtx:[],tri:[],grp:[]};
 lol.axis={x:-2,y:0,z:-2};
 lol.light={x:0,y:0,z:-1024};
 lol.norm={x:0.75,y:0.75,z:0.75};
@@ -46,7 +46,7 @@ lol.tn=function(txt){return window.document.createTextNode(String(txt));};
 
 lol.version=
   {
-  maj:0,min:4,build:28,beta:true, /* u03b1=alpha,u03b2=beta */
+  maj:0,min:4,build:29,beta:true, /* u03b1=alpha,u03b2=beta */
   get:function()
     {
     var v=lol.version;
@@ -56,7 +56,7 @@ lol.version=
 
 lol.init=function()
   {
-  var i=0,n,x,y,z,r,a,vec,mtx,scale={},obj,handler;
+  var i=0,j=0,n,x,y,z,r,a,vec,scale,obj,handler;
   lol.config=lol.localstorage.get();
   if(lol.config.version!==lol.version.get())
     {
@@ -71,16 +71,16 @@ lol.init=function()
       flag:lol.flag.list,
       anim:false,
       console:true,
-      color:{n:5,stop:[0.2,0.4,0.6]},
+      color:{n:8,stop:[0.25,0.5,0.75]},
       pr:{w:3,h:3},         /* pixel ratio */
-      zr:128,               /* focale */
+      zr:96,                /* focale */
       np:0,                 /* nearplane (from camera) */
       p:{x:0,y:-2.5,z:0},   /* position vector */
       r:{x:0,y:0,z:0},      /* rotation vector */
-      cam:{x:-4,y:-4,z:-12},/* camera position vector */
+      cam:{x:0,y:-5,z:-10}, /* camera position vector */
       co:{x:0,y:0,z:0},     /* camera origin vector */
-      cr:{x:0,y:-22.5,z:0}, /* camera rotation vector */
-      lr:{x:22.5,y:200,z:0} /* light rotation vector */
+      cr:{x:0,y:0,z:0},     /* camera rotation vector */
+      lr:{x:35,y:35,z:0}    /* light rotation vector */
       };
     lol.localstorage.save();
     }
@@ -161,30 +161,42 @@ lol.init=function()
   mesh.mountain.tri.push(0);
   mesh.mountain.tri.push(i);
   mesh.mountain.tri.push(i+1);
-  lol.mesh.format(mesh.mountain,0);
+  lol.mesh.format(mesh.mountain,{col:0,grp:0});
   i=0;
   n=16;
-  scale={x:64*0.15,y:128,z:64*0.15};
+  scale={x:64,y:48,z:64};
   while(i<n)
     {
     r=(i>0)?256+(2048-256)*Math.sin(Math.PI*4/n*i):256;
     a=360/n*i+90;
     x=Math.round(r*Math.cos(a*Math.PI/180));
     z=Math.round(r*Math.sin(a*Math.PI/180));
-    lol.mesh.format(mesh.trapezoid,1,{x:x,y:-24,z:z},{x:64,y:48,z:64});
-    lol.mesh.format(mesh.tube,0,{x:x,y:-64-48,z:z},scale);
+    lol.mesh.format(mesh.trapezoid,{col:0,grp:1,s:scale,p:{x:x,y:-24,z:z}});
+    r=512/lol.color.n;
+    j=0;
+    while(j<lol.color.n)
+      {
+      lol.mesh.format({vtx:[0,-r,0,0,0,0,0,0,0],tri:[0,1,2]},
+        {
+        type:2,
+        col:7,
+        idx:lol.color.n-1-j,
+        grp:1,
+        p:{x:x,y:-48-r*j,z:z}
+        });
+      j+=1;
+      }
     i+=1;
     }
-  lol.mesh.format(mesh.cube,1,{x:3.5,y:-0.5,z:-3.5});
-  lol.mesh.format(mesh.cube,1,{x:-3.5,y:-1,z:3.5},{x:0.5,y:2,z:0.5});
-  lol.mesh.format(mesh.pyramid,1,{x:-3.5,y:-0.5,z:-3.5});
-  lol.mesh.format(mesh.pyramid,1,{x:3.5,y:-0.5,z:3.5},{x:2,y:1,z:2});
-  //lol.mesh.format(mesh.icosahedron,2,null,{x:3,y:3,z:3},{x:32,y:0,z:0});
+  lol.mesh.format(mesh.cube,{col:1,grp:1,p:{x:-3.5,y:-0.5,z:-3.5}});
+  lol.mesh.format(mesh.icosahedron,{col:2,grp:1,s:{x:1.5,y:1.5,z:1.5},p:{x:3.5,y:-1,z:-3.5}});
+  lol.mesh.format(mesh.cube,{col:5,grp:1,s:{x:0.5,y:2,z:0.5},p:{x:-3.5,y:-1,z:3.5}});
+  lol.mesh.format(mesh.pyramid,{col:4,grp:1,s:{x:2,y:1,z:2},p:{x:3.5,y:-0.5,z:3.5}});
   obj=lol.mesh.norm(mesh.dodecahedron);
-  lol.mesh.format(obj,2,null,{x:2,y:2,z:2},{x:32,y:0,z:0});
-  //obj=lol.mesh.load('mesh/totodile.json');
-  //scale={x:0.05,y:0.05,z:0.05};
-  //lol.mesh.format(obj,1,{x:-3,y:0,z:-3},scale,{x:90,y:180,z:180});
+  lol.mesh.format(obj,{col:3,grp:2,s:{x:2,y:2,z:2},r:{x:32,y:0,z:0}});
+  /*obj=lol.mesh.load('mesh/totodile.json');
+  scale={x:0.05,y:0.05,z:0.05};
+  lol.mesh.format(obj,{col:2,grp:1,s:scale,p:{x:-3,y:0,z:-3},r:{x:90,y:180,z:180}});*/
   lol.viewport();
   lol.color.init();
   lol.icon();
@@ -237,7 +249,7 @@ lol.init=function()
   lol.color.update(1);
   lol.console.hr(2);
   lol.console.log('vertex n',lol.data.vtx.length);
-  lol.console.log('face n',lol.data.tri.length/3);
+  lol.console.log('face n',lol.data.tri.length);
   lol.console.hr(3);
   window.Object.keys(lol.flag.list).forEach(function(v){lol.flag.set(v);});
   lol.console.hr(4);
@@ -466,12 +478,12 @@ lol.color=
   pal:[[]],
   list:[
     [128,128,128],
-    [128,112,160],
-    [160,112,128],
     [160,144,96],
-    [96,128,96],
+    [192,96,48],
+    //[160,112,128],
+    //[128,112,160],
     [96,128,160],
-    [192,96,48]
+    [96,128,96]
     ],
   bgd:[72,56,48],
   format:function(col)
@@ -518,6 +530,8 @@ lol.color=
     while(el.firstChild){el.removeChild(el.firstChild);}
     t=lol.color.pal[0].length;
     lol.color.pal[0].forEach(function(v,i){lol.color.square(v,i);});
+    lol.color.list.forEach(function(v,i){lol.color.generate(v,i+1);});
+    n=lol.color.list.length+1;
     lol.color.pal[n]=[];
     while(i<=lol.color.n)
       {
@@ -529,7 +543,6 @@ lol.color=
       lol.color.square(lol.color.pal[n][i],t+i);
       i+=1;
       }
-    lol.color.list.forEach(function(v,i){lol.color.generate(v,i+2);});
     i=0;
     n=lol.color.list.length+2;
     lol.color.pal[n]=[];
@@ -888,11 +901,11 @@ lol.fill=
           case 1: case 11:
             lol.color.set(lol.color.pal[p][c]);
             lol.ctx.fillRect(a,y,b-a,1);
-            if(y%3===0)
+            if(y%4===0)
               {
               lol.color.set(lol.color.pal[p][c+((n===1)?1:-1)]);
               lol.ctx.beginPath();
-              while(x<b){if(x%3===0){lol.plot.pixel({x:x,y:y});}x+=1;}
+              while(x<b){if(x%4===0){lol.plot.pixel({x:x,y:y});}x+=1;}
               lol.ctx.closePath();
               lol.ctx.fill();
               }
@@ -946,7 +959,7 @@ lol.fill=
                 {
                 lol.color.set(lol.color.pal[p][c+((n===4)?1:-1)]);
                 lol.ctx.beginPath();
-                while(x<b){if((x+i)%4===0){lol.plot.pixel({x:x,y:y});}x+=1;}
+                while(x<b){if((x+i)%4===2){lol.plot.pixel({x:x,y:y});}x+=1;}
                 lol.ctx.closePath();
                 lol.ctx.fill();
                 }
@@ -959,11 +972,11 @@ lol.fill=
             lol.ctx.beginPath();
             if(i===0)
               {
-              while(x<b){if(x%2===1){lol.plot.pixel({x:x,y:y});}x+=1;}
+              while(x<b){if(x%2===0){lol.plot.pixel({x:x,y:y});}x+=1;}
               }
             else
               {
-              m=(y%4===1)?0:2;
+              m=(y%4===1)?1:3;
               while(x<b){if(x%4===m){lol.plot.pixel({x:x,y:y});}x+=1;}
               }
             lol.ctx.closePath();
@@ -1017,11 +1030,11 @@ lol.fill=
           case 1: case 11:
             lol.color.set(lol.color.pal[p][c]);
             lol.ctx.fillRect(a,y,b-a,1);
-            if(y%3===0)
+            if(y%4===0)
               {
               lol.color.set(lol.color.pal[p][c+((n===1)?1:-1)]);
               lol.ctx.beginPath();
-              while(x<b){if(x%3===0){lol.plot.pixel({x:x,y:y});}x+=1;}
+              while(x<b){if(x%4===0){lol.plot.pixel({x:x,y:y});}x+=1;}
               lol.ctx.closePath();
               lol.ctx.fill();
               }
@@ -1075,7 +1088,7 @@ lol.fill=
                 {
                 lol.color.set(lol.color.pal[p][c+((n===4)?1:-1)]);
                 lol.ctx.beginPath();
-                while(x<b){if((x+i)%4===0){lol.plot.pixel({x:x,y:y});}x+=1;}
+                while(x<b){if((x+i)%4===2){lol.plot.pixel({x:x,y:y});}x+=1;}
                 lol.ctx.closePath();
                 lol.ctx.fill();
                 }
@@ -1088,11 +1101,11 @@ lol.fill=
             lol.ctx.beginPath();
             if(i===0)
               {
-              while(x<b){if(x%2===1){lol.plot.pixel({x:x,y:y});}x+=1;}
+              while(x<b){if(x%2===0){lol.plot.pixel({x:x,y:y});}x+=1;}
               }
             else
               {
-              m=(y%4===1)?0:2;
+              m=(y%4===1)?1:3;
               while(x<b){if(x%4===m){lol.plot.pixel({x:x,y:y});}x+=1;}
               }
             lol.ctx.closePath();
@@ -1136,7 +1149,7 @@ lol.fill=
 lol.render=function()
   {
   var i,k,l,n,test=true,vec,mtx,x,y,ls,a,b,c,d,e,v,max,
-  tmp=[],raw=[],dat=[],fct=[],norm=[],cull=[],lgt=[],col=[];
+  tmp=[],raw=[],dat=[],tri=[],fct=[],norm=[],cull=[],lgt=[];
   lol.co=lol.matrix.mul(lol.vector.o,lol.matrix.rotate(lol.cr));
   mtx=lol.matrix.rotate(lol.vector.sub(lol.lr,lol.cr));
   ls=lol.vector.norm(lol.matrix.mul(lol.light,mtx));
@@ -1153,9 +1166,15 @@ lol.render=function()
       tmp[i]=lol.vector.add(vec,lol.p);
       }
     });
-  lol.data.tri.forEach(function(v,i){raw[i]=tmp[v];});
+  lol.data.tri.forEach(function(v,i)
+    {
+    k=i*3;
+    raw[k]=tmp[v.dat[0]];
+    raw[k+1]=tmp[v.dat[1]];
+    raw[k+2]=tmp[v.dat[2]];
+    });
   raw.forEach(function(v,i,a){a[i]=lol.vector.project(v);});
-  col=lol.util.copy(lol.data.col);
+  tri=lol.util.copy(lol.data.tri);
   n=raw.length/3;
   while(test) /* bubble sort */
     {
@@ -1169,58 +1188,61 @@ lol.render=function()
         vec=raw[k-1];raw[k-1]=raw[k+2];raw[k+2]=vec;
         vec=raw[k-2];raw[k-2]=raw[k+1];raw[k+1]=vec;
         vec=raw[k-3];raw[k-3]=raw[k];raw[k]=vec;
-        c=col[i-1];col[i-1]=col[i];col[i]=c;
+        c=tri[i-1];tri[i-1]=tri[i];tri[i]=c;
         test=true;
         }
       i+=1;
       }
     n-=1;
     }
-  raw.forEach(function(v,i){dat[i]=lol.vector.transform(v);});
-  /*i=0;
-  while(i<raw.length)
-    {
-    a=raw[i];
-    b=raw[i+1];
-    c=raw[i+2];
-    if(a.z!==b.z){v=lol.vector.inter3d(a,b);if(a.z>b.z){a=v;}else{b=v;}}
-    if(b.z!==c.z){v=lol.vector.inter3d(b,c);if(b.z>c.z){b=v;}else{c=v;}}
-    dat[i]=lol.vector.transform(a);
-    dat[i+1]=lol.vector.transform(b);
-    dat[i+2]=lol.vector.transform(c);
-    i+=3;
-    }*/
-  n=raw.length/3;
+  //raw.forEach(function(v,i){dat[i]=lol.vector.transform(v);});
+  n=tri.length;
   i=0;
-  k=0;
+  while(i<n)
+    {
+    k=i*3;
+    if(tri[i].type===0)
+      {
+      dat[k]=lol.vector.transform(raw[k]);
+      dat[k+1]=lol.vector.transform(raw[k+1]);
+      dat[k+2]=lol.vector.transform(raw[k+2]);
+      }
+    else
+      {
+      dat[k]=raw[k];
+      dat[k+1]=raw[k+1];
+      dat[k+2]=raw[k+2];
+      }
+    i+=1;
+    }
+  i=0;
   while(i<lol.hzn.n)
     {
+    k=i*3;
     cull[i]=lol.vector.norm(lol.vector.normal2d(dat[k],dat[k+1],dat[k+2])).z;
     i+=1;
-    k+=3;
     }
   while(i<n)
     {
+    k=i*3;
     cull[i]=lol.vector.norm(lol.vector.normal2d(dat[k],dat[k+1],dat[k+2])).z;
     norm[i]=lol.vector.norm(lol.vector.normal(raw[k],raw[k+1],raw[k+2]));
     lgt[i]=(i>lol.hzn.n)?-lol.vector.dot(norm[i],ls)/2:0.5;
     i+=1;
-    k+=3;
     }
   if(lol.flag.get('normal'))
     {
     i=0;
     k=0;
-    while(i<n)
+    while(i<raw.length)
       {
       fct[i]=
         {
-        x:(raw[k+0].x+raw[k+1].x+raw[k+2].x)/3,
-        y:(raw[k+0].y+raw[k+1].y+raw[k+2].y)/3,
-        z:(raw[k+0].z+raw[k+1].z+raw[k+2].z)/3
+        x:(raw[i].x+raw[i+1].x+raw[i+2].x)/3,
+        y:(raw[i].y+raw[i+1].y+raw[i+2].y)/3,
+        z:(raw[i].z+raw[i+1].z+raw[i+2].z)/3
         };
-      i+=1;
-      k+=3;
+      i+=3;
       }
     }
   lol.ctx.clearRect(0,0,lol.w,lol.h); /* clear viewport */
@@ -1233,7 +1255,7 @@ lol.render=function()
     vec=lol.vector.mul(ls,{x:lol.hzn.l,y:lol.hzn.l,z:lol.hzn.l});
     lol.color.set(lol.color.pal[0][2]);
     lol.fill.disc(lol.vector.transform(lol.vector.project(vec)),42);
-    lol.color.set(lol.color.pal[1][Math.round(lol.color.n/4)]);
+    lol.color.set(lol.color.pal[6][Math.round(lol.color.n/4)]);
     lol.fill.disc(lol.vector.transform(lol.vector.project(vec)),24);
     }
   if(lol.flag.get('star'))
@@ -1243,7 +1265,7 @@ lol.render=function()
     k=0;
     while(i<lol.color.n)
       {
-      lol.color.set(lol.color.pal[1][i]);
+      lol.color.set(lol.color.pal[6][i]);
       lol.ctx.beginPath();
       k=v*i;
       while(k<v*i+v)
@@ -1258,19 +1280,18 @@ lol.render=function()
     }
   if(lol.flag.get('light'))
     {
-    lol.color.set(lol.color.pal[1][Math.round(lol.color.n/4*3)]);
+    lol.color.set(lol.color.pal[6][Math.round(lol.color.n/4*3)]);
     lol.fill.disc(lol.vector.transform(lol.vector.project(vec)),18);
     }
   if(lol.flag.get('face'))
     {
-    c=Math.round(lol.color.n*lol.color.stop[0]);
     i=0;
     while(i<lol.hzn.n)
       {
       if(cull[i]<0)
         {
         k=i*3;
-        lol.fill.triangle(dat[k],dat[k+1],dat[k+2],0,col[i],0);
+        lol.fill.triangle(dat[k],dat[k+1],dat[k+2],0,tri[i].col,0);
         }
       i+=1;
       }
@@ -1401,9 +1422,10 @@ lol.render=function()
     max=(lol.color.n-1)*lol.color.d;
     while(i<n)
       {
+      k=i*3;
       if(cull[i]<0)
         {
-        if(lol.flag.get('light'))
+        if(lol.flag.get('light')&&tri[i].col>0)
           {
           c=Math.round(lgt[i]*max).clamp(0,max);
           d=lol.flag.get('dither')?c%lol.color.d:0;
@@ -1413,9 +1435,19 @@ lol.render=function()
           c=Math.round(lol.color.n*lol.color.stop[1])*lol.color.d;
           d=0;
           }
-        k=i*3;
         c=Math.round(c/lol.color.d);
-        lol.fill.triangle(dat[k],dat[k+1],dat[k+2],col[i],c,d);
+        lol.fill.triangle(dat[k],dat[k+1],dat[k+2],tri[i].col,c,d);
+        }
+      else
+        {
+        if(tri[i].type===2)
+          {
+          a=dat[k];
+          b=dat[k+1];
+          if(a.z!==b.z){v=lol.vector.inter3d(a,b);if(a.z>b.z){a=v;}else{b=v;}}
+          lol.color.set(lol.color.pal[tri[i].col][tri[i].idx]);
+          lol.plot.line(lol.vector.transform(a),lol.vector.transform(b));
+          }
         }
       i+=1;
       }
@@ -1442,10 +1474,9 @@ lol.render=function()
       i+=1;
       }
     }
-  /*
-  if(lol.flag.get('vertex'))
+  if(lol.flag.get('vertex')&&!lol.flag.get('face')&&!lol.flag.get('wireframe'))
     {
-    lol.color.set(lol.color.pal[1][lol.color.n-1]);
+    lol.color.set(lol.color.pal[6][lol.color.n-1]);
     lol.ctx.beginPath();
     tmp.forEach(function(v)
       {
@@ -1454,7 +1485,6 @@ lol.render=function()
     lol.ctx.closePath();
     lol.ctx.fill();
     }
-  */
   if(lol.flag.get('normal'))
     {
     norm.forEach(function(n,i)
@@ -1492,13 +1522,13 @@ lol.render=function()
     }
   if(lol.flag.get('axis')&&lol.flag.get('light'))
     {
-    vec=lol.vector.add(lol.vector.mul(ls,{x:4,y:4,z:4}),lol.p);
+    vec=lol.vector.add(lol.vector.mul(ls,{x:6,y:6,z:6}),lol.p);
     a=lol.vector.project(vec);
-    v=lol.matrix.mul({x:0,y:0,z:1},mtx);
+    v=lol.matrix.mul({x:0,y:0,z:2},mtx);
     b=lol.vector.project(lol.vector.add(v,vec));
-    v=lol.matrix.mul({x:-0.125,y:0,z:0.875},mtx);
+    v=lol.matrix.mul({x:-0.125,y:0,z:1.75},mtx);
     c=lol.vector.project(lol.vector.add(v,vec));
-    v=lol.matrix.mul({x:0.125,y:0,z:0.875},mtx);
+    v=lol.matrix.mul({x:0.125,y:0,z:1.75},mtx);
     d=lol.vector.project(lol.vector.add(v,vec));
     lol.color.set(lol.color.pal[0][8]);
     if(a.z!==b.z){v=lol.vector.inter3d(a,b);if(a.z>b.z){a=v;}else{b=v;}}
@@ -1600,7 +1630,7 @@ lol.fps=
   init:function()
     {
     lol.fps.col.bar=lol.color.pal[0][2];
-    lol.fps.col.dot=lol.color.pal[1][Math.round(lol.color.n/4)];
+    lol.fps.col.dot=lol.color.pal[0][3];
     lol.fps.reset();
     lol.console.log('fps','---');
     var i=0,el=lol.el('div');
@@ -1834,14 +1864,18 @@ lol.mesh=
       });
     return lol.mesh.norm({vtx:vtx,tri:tri,col:col});
     },
-  format:function(mesh,g,p,s,o)
+  format:function(mesh,cfg)//c,g,p,s,o)
     {
-    mesh=mesh||{vtx:[],tri:[],col:[],grp:[]};
-    g=g||0;
-    p=p||{x:0,y:0,z:0};
-    s=s||{x:1,y:1,z:1};
-    o=o||{x:0,y:0,z:0};
-    var i=0,k,n=0,vtx=[],tri=[],grp=[],mtx;
+    mesh=mesh||{vtx:[],tri:[],grp:[]};
+    cfg=cfg||{};
+    cfg.type=cfg.type||0;
+    cfg.col=cfg.col||1;
+    cfg.idx=cfg.idx||0;
+    cfg.grp=cfg.grp||1;
+    cfg.s=cfg.s||{x:1,y:1,z:1};
+    cfg.r=cfg.r||{x:0,y:0,z:0};
+    cfg.p=cfg.p||lol.vector.o;
+    var i=0,k,n=0,vtx=[],tri=[],grp=[],dat=[],tmp=[],mtx;
     while(i<mesh.vtx.length/3)
       {
       k=i*3;
@@ -1849,49 +1883,54 @@ lol.mesh=
       i+=1;
       }
     n=lol.data.vtx.length;
-    mesh.tri.forEach(function(v,i){tri[i]=v+n;});
-    mtx=lol.matrix.rotate(lol.vector.add(lol.vector.o,o));
+    tmp=mesh.tri.map(function(v){return v+n;});
+    mtx=lol.matrix.rotate(lol.vector.add(lol.vector.o,cfg.r));
     vtx.forEach(function(v,i,a)
       {
-      v=lol.vector.mul(v,s);   /* scale */
-      v=lol.matrix.mul(v,mtx); /* orientation */
-      v=lol.vector.add(v,p);   /* position */
+      v=lol.vector.mul(v,cfg.s); /* scale */
+      v=lol.matrix.mul(v,mtx);   /* rotation */
+      v=lol.vector.add(v,cfg.p); /* position */
       a[i]=v;
-      grp[i]=g;
+      grp[i]=cfg.grp;
       });
+    i=0;
+    while(i<mesh.tri.length/3)
+      {
+      k=i*3;
+      dat=[tmp[k],tmp[k+1],tmp[k+2]];
+      tri[i]={type:cfg.type,dat:dat,col:cfg.col,idx:cfg.idx};
+      i+=1;
+      }
     lol.data.vtx=lol.data.vtx.concat(vtx);
     lol.data.tri=lol.data.tri.concat(tri);
-    lol.data.col=lol.data.col.concat(mesh.col);
     lol.data.grp=lol.data.grp.concat(grp);
     },
   norm:function(mesh)
     {
-    var i=0,j=0,k=0,n1,n2,a,b,vtx=[],v=0;
+    var i=0,j=0,k=0,a,b,vtx=[],v=0;
     console.log('vtx='+(mesh.vtx.length/3));
-    while(i<mesh.vtx.length/3)
+    while(i<mesh.vtx.length)
       {
-      n1=i*3;
-      a={x:mesh.vtx[n1],y:mesh.vtx[n1+1],z:mesh.vtx[n1+2]};
-      if(a.x===null&&a.y===null&&a.z===null){i+=1;continue;}
+      a={x:mesh.vtx[i],y:mesh.vtx[i+1],z:mesh.vtx[i+2]};
+      if(a.x===null&&a.y===null&&a.z===null){i+=3;continue;}
       k=0;
-      while(k<mesh.tri.length){if(mesh.tri[k]===n1/3){mesh.tri[k]=v;}k+=1;}
-      j=i+1;
-      while(j<mesh.vtx.length/3)
+      while(k<mesh.tri.length){if(mesh.tri[k]===i/3){mesh.tri[k]=v;}k+=1;}
+      j=i+3;
+      while(j<mesh.vtx.length)
         {
-        n2=j*3;
-        b={x:mesh.vtx[n2],y:mesh.vtx[n2+1],z:mesh.vtx[n2+2]};
+        b={x:mesh.vtx[j],y:mesh.vtx[j+1],z:mesh.vtx[j+2]};
         if(b.x===a.x&&b.y===a.y&&b.z===a.z)
           {
-          mesh.vtx[n2]=null;
-          mesh.vtx[n2+1]=null;
-          mesh.vtx[n2+2]=null;
+          mesh.vtx[j]=null;
+          mesh.vtx[j+1]=null;
+          mesh.vtx[j+2]=null;
           k=0;
-          while(k<mesh.tri.length){if(mesh.tri[k]===n2/3){mesh.tri[k]=v;}k+=1;}
+          while(k<mesh.tri.length){if(mesh.tri[k]===j/3){mesh.tri[k]=v;}k+=1;}
           }
-        j+=1;
+        j+=3;
         }
       v+=1;
-      i+=1;
+      i+=3;
       }
     i=0;
     mesh.vtx.forEach(function(v){if(v!==null){vtx.push(v);}});
@@ -1912,7 +1951,7 @@ lol.flag=
     wireframe:false,
     normal:false,
     light:true,
-    dither:false,
+    dither:true,
     star:true,
     scanline:false
     },
@@ -2186,7 +2225,7 @@ lol.scanline=
   {
   init:function()
     {
-    var i=0,j=0,a=0.25,cvs=lol.el('canvas'),ctx,el=lol.el('div');
+    var i=0,j=0,a=0.1,cvs=lol.el('canvas'),ctx,el=lol.el('div');
     cvs.width=12;
     cvs.height=12;
     ctx=cvs.getContext('2d');
@@ -2201,9 +2240,9 @@ lol.scanline=
         ctx.fillRect(i+j%2+1,j,1,3);
         ctx.fillStyle='rgba(64,64,224,'+a+')';
         ctx.fillRect(i+((j%2===0)?2:0),j,1,3);
-        ctx.fillStyle='rgba(0,0,0,0.125)';
+        ctx.fillStyle='rgba(0,0,0,0.25)';
         ctx.fillRect(i,j+1,3,1);
-        ctx.fillStyle='rgba(0,0,0,0.5)';
+        ctx.fillStyle='rgba(0,0,0,0.625)';
         ctx.fillRect(i,j+2,3,1);
         i+=3;
         }
@@ -2327,8 +2366,8 @@ lol.icon=function()
   window.document.head.appendChild(icon);
   img=lol.el('img');
   img.src=icon.href;
-  img.width=cvs.width*2;
-  img.height=cvs.height*2;
+  img.width=cvs.width*lol.pr.w;
+  img.height=cvs.height*lol.pr.h;
   img.style.float='right';
   img.style.imageRendering='pixelated';
   img.style.zIndex=1024;
