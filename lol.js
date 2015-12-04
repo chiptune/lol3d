@@ -30,7 +30,7 @@ lol.timer=0;
 lol.rid=false; /* frame request id */
 lol.cvs=false; /* canvas */
 lol.ctx=false; /* 2d context */
-lol.data={vtx:[],tri:[],grp:[]};
+lol.data={vtx:[],tri:[]};
 lol.axis={x:-2,y:0,z:-2};
 lol.light={x:0,y:0,z:-32768};
 lol.norm={x:0.75,y:0.75,z:0.75};
@@ -47,7 +47,7 @@ lol.tn=function(txt){return window.document.createTextNode(String(txt));};
 
 lol.version=
   {
-  maj:0,min:5,build:8,beta:true, /* u03b1=alpha,u03b2=beta */
+  maj:0,min:5,build:9,beta:true, /* u03b1=alpha,u03b2=beta */
   get:function()
     {
     var v=lol.version;
@@ -72,7 +72,7 @@ lol.init=function()
       flag:lol.flag.list,
       anim:false,
       console:true,
-      color:{n:8,stop:[0.25,0.5,0.75]},
+      color:{n:6,stop:[0.2,0.4,0.7]},
       pr:{w:3,h:3},         /* pixel ratio */
       zr:128,               /* focale */
       np:0,                 /* nearplane (from camera) */
@@ -162,7 +162,7 @@ lol.init=function()
   mesh.mountain.tri.push(0);
   mesh.mountain.tri.push(i);
   mesh.mountain.tri.push(i+1);
-  lol.mesh.format(mesh.mountain,{col:0,idx:1,grp:0});
+  lol.mesh.format(mesh.mountain,{type:1,col:0,idx:1});
   /* laser pyramid */
   i=0;
   n=16;
@@ -175,9 +175,9 @@ lol.init=function()
     z=Math.round(r*Math.sin(a*lol.ar));
     lol.mesh.format(mesh.trapezoid,
       {
+      type:0,
       col:1,
       idx:1,
-      grp:1,
       s:{x:64,y:48,z:64},
       p:{x:x,y:-24,z:z}
       });
@@ -189,22 +189,21 @@ lol.init=function()
         type:2,
         col:7,
         idx:lol.color.n-1-j,
-        grp:1,
         p:{x:x,y:-48-y*j,z:z}
         });
       j+=1;
       }
     i+=1;
     }
-  lol.mesh.format(mesh.cube,{col:1,grp:1,p:{x:-3.5,y:-0.5,z:-3.5}});
-  lol.mesh.format(mesh.icosahedron,{col:2,grp:1,s:{x:1.5,y:1.5,z:1.5},p:{x:3.5,y:-1,z:-3.5}});
-  lol.mesh.format(mesh.cube,{col:5,grp:1,s:{x:0.5,y:2,z:0.5},p:{x:-3.5,y:-1,z:3.5}});
-  lol.mesh.format(mesh.pyramid,{col:4,grp:1,s:{x:2,y:1,z:2},p:{x:3.5,y:-0.5,z:3.5}});
+  lol.mesh.format(mesh.cube,{col:1,p:{x:-3.5,y:-0.5,z:-3.5}});
+  lol.mesh.format(mesh.icosahedron,{grp:0,col:2,s:{x:1.5,y:1.5,z:1.5},p:{x:3.5,y:-1,z:-3.5}});
+  lol.mesh.format(mesh.cube,{col:5,s:{x:0.5,y:2,z:0.5},p:{x:-3.5,y:-1,z:3.5}});
+  lol.mesh.format(mesh.pyramid,{col:4,s:{x:2,y:1,z:2},p:{x:3.5,y:-0.5,z:3.5}});
   obj=lol.mesh.norm(mesh.dodecahedron);
-  lol.mesh.format(obj,{col:3,grp:2,s:{x:2,y:2,z:2},r:{x:32,y:0,z:0}});
+  lol.mesh.format(obj,{grp:1,col:3,s:{x:2,y:2,z:2},r:{x:32,y:0,z:0}});
   /*obj=lol.mesh.load('mesh/totodile.json');
   scale={x:0.05,y:0.05,z:0.05};
-  lol.mesh.format(obj,{col:2,grp:1,s:scale,p:{x:-3,y:0,z:-3},r:{x:90,y:180,z:180}});*/
+  lol.mesh.format(obj,{col:2,s:scale,p:{x:-3,y:0,z:-3},r:{x:90,y:180,z:180}});*/
   lol.viewport();
   lol.color.init();
   lol.icon();
@@ -872,7 +871,14 @@ lol.fill=
     if(v1.y>v2.y){v=v1;v1=v2;v2=v;}
     if(v2.y>v3.y){v=v2;v2=v3;v3=v;}
     if(v1.y>v2.y){v=v1;v1=v2;v2=v;}
-    v4={x:Math.round(v1.x+((v2.y-v1.y)/(v3.y-v1.y))*(v3.x-v1.x)),y:v2.y};
+    if((v3.y-v1.y)!==0)
+      {
+      v4={x:Math.round(v1.x+((v2.y-v1.y)/(v3.y-v1.y))*(v3.x-v1.x)),y:v2.y};
+      }
+    else
+      {
+      v4={x:v1.x,y:v2.y};
+      }
     lol.fill.tri_low(v1,v2,v4,p,c,n);
     lol.fill.tri_top(v2,v4,v3,p,c,n);
     if(lol.flag.get('vertex'))
@@ -1174,17 +1180,18 @@ lol.render=function()
   ls=lol.vector.norm(lol.matrix.mul(lol.light,lm));
   ln=lol.vector.norm(lol.matrix.mul(lol.light,lol.matrix.rotate(lol.lr)));
   sm=lol.matrix.shadow(ls);
-  mtx=[lol.matrix.rotate(lol.r)];
+  mtx=[lol.matrix.rotate(lol.r)];//,lol.matrix.rotate({x:0,y:lol.r.y,z:0})];
   lol.data.vtx.forEach(function(v,i)
     {
-    if(lol.data.grp[i]===2)
+    vr[i]=v.dat;
+    if(v.grp!==0)
       {
-      v=lol.vector.add(lol.matrix.mul(v,mtx[lol.data.grp[i]-2]),lol.p);
+      vr[i]=lol.matrix.mul(v.dat,mtx[v.grp-1]);
+      if(v.grp===1){vr[i]=lol.vector.add(vr[i],lol.p);}
       }
-    vr[i]=v;
-    vp[i]=lol.vector.project(v);
+    vp[i]=lol.vector.project(vr[i]);
     vt[i]=lol.vector.transform(vp[i]);
-    vs[i]=lol.vector.transform(lol.vector.project(lol.matrix.mul(v,sm)));
+    vs[i]=lol.vector.transform(lol.vector.project(lol.matrix.mul(vr[i],sm)));
     });
   tri.forEach(function(v,i)
     {
@@ -1203,6 +1210,7 @@ lol.render=function()
       v.norm=lol.vector.normal(v.prj);
       v.lgt=-lol.vector.dot(lol.vector.normal(v.raw),ln)/2;
       v.sdw=[vs[v.dat[0]],vs[v.dat[1]],vs[v.dat[2]]];
+      v.sdc=lol.vector.normal2d(v.sdw).z;
       }
     });
   n=tri.length;
@@ -1225,7 +1233,7 @@ lol.render=function()
   lol.ctx.clearRect(0,0,lol.w,lol.h); /* clear viewport */
   //lol.ctx.fillStyle='rgba('+lol.color.bgd.join(',')+','+',0.5)';
   //lol.ctx.fillRect(0,0,lol.w,lol.h);
-  if(lol.flag.get('light'))
+  if(lol.flag.get('light')&&lol.lr.x>0&&lol.lr.x<180)
     {
     ls=lol.vector.norm(lol.matrix.mul(lol.light,lm));
     vec=lol.vector.mul(ls,{x:lol.hzn.l,y:lol.hzn.l,z:lol.hzn.l});
@@ -1254,7 +1262,7 @@ lol.render=function()
       i+=1;
       }
     }
-  if(lol.flag.get('light'))
+  if(lol.flag.get('light')&&lol.lr.x>0&&lol.lr.x<180)
     {
     lol.color.set(lol.color.pal[6][Math.round(lol.color.n/4*3)]);
     lol.fill.disc(lol.vector.transform(lol.vector.project(vec)),18);
@@ -1326,7 +1334,6 @@ lol.render=function()
     if(a.z!==b.z){v=lol.vector.inter3d(a,b);if(a.z>b.z){a=v;}else{b=v;}}
     lol.plot.line(lol.vector.transform(a),lol.vector.transform(b));
     /* circle */
-    //lol.plot.circle({x:0,y:lol.axis.y,z:0},7.075,4,45);
     lol.plot.circle({x:0,y:lol.axis.y,z:0},10,4);
     /* grid */
     l=1;
@@ -1352,15 +1359,15 @@ lol.render=function()
       i+=1;
       }
     }
-  if(lol.flag.get('light'))
+  if(lol.flag.get('light')&&lol.lr.x>0&&lol.lr.x<180)
     {
     i=lol.hzn.n;
     while(i<n)
       {
       t=tri[i];
-      if(t.type===0)
+      if(t.type===0&&t.sdc<0)
         {
-        //lol.fill.triangle(t.sdw[0],t.sdw[1],t.sdw[2],0,1,0);
+        lol.fill.triangle(t.sdw[0],t.sdw[1],t.sdw[2],0,1,0);
         }
       i+=1;
       }
@@ -1448,7 +1455,7 @@ lol.render=function()
           }
         else
           {
-          c=lol.color.n*lol.color.d/2;
+          c=(t.idx===null)?lol.color.n*lol.color.d/2:t.idx;
           }
         c=Math.round(c/lol.color.d);
         lol.fill.triangle(t.t2d[0],t.t2d[1],t.t2d[2],t.col,c,d);
@@ -1891,16 +1898,16 @@ lol.mesh=
     },
   format:function(mesh,cfg)//c,g,p,s,o)
     {
-    mesh=mesh||{vtx:[],tri:[],grp:[]};
+    mesh=mesh||{vtx:[],tri:[]};
     cfg=cfg||{};
     cfg.type=lol.util.isnumber(cfg.type)?cfg.type:0;
     cfg.col=lol.util.isnumber(cfg.col)?cfg.col:1;
     cfg.idx=lol.util.isnumber(cfg.idx)?cfg.idx:null;
-    cfg.grp=lol.util.isnumber(cfg.grp)?cfg.grp:1;
+    cfg.grp=lol.util.isnumber(cfg.grp)?cfg.grp:0;
     cfg.s=cfg.s||{x:1,y:1,z:1};
     cfg.r=cfg.r||{x:0,y:0,z:0};
     cfg.p=cfg.p||lol.vector.o;
-    var i=0,k,n=0,vtx=[],tri=[],grp=[],dat=[],tmp=[],mtx;
+    var i=0,k,n=0,vtx=[],tri=[],dat=[],tmp=[],mtx;
     while(i<mesh.vtx.length/3)
       {
       k=i*3;
@@ -1915,8 +1922,7 @@ lol.mesh=
       v=lol.vector.mul(v,cfg.s); /* scale */
       v=lol.matrix.mul(v,mtx);   /* rotation */
       v=lol.vector.add(v,cfg.p); /* position */
-      a[i]=v;
-      grp[i]=cfg.grp;
+      a[i]={grp:cfg.grp,dat:v};
       });
     i=0;
     while(i<mesh.tri.length/3)
@@ -1928,7 +1934,6 @@ lol.mesh=
       }
     lol.data.vtx=lol.data.vtx.concat(vtx);
     lol.data.tri=lol.data.tri.concat(tri);
-    lol.data.grp=lol.data.grp.concat(grp);
     },
   norm:function(mesh)
     {
