@@ -8,3 +8,4 @@ a simple javascript software 3d engine
 \__/\   \/RTX______\___/\__/\   \/ / /_/_/
      \___)   \__)            \___) \/
 ```
+![screenshot](http://lol.pm/3d/rzr-cult_of_the_dodecahedron.gif)
